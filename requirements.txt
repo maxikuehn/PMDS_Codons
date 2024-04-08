@@ -1,0 +1,3 @@
+python-dotenv
+pymongo~=4.6.3
+biopython~=1.83
