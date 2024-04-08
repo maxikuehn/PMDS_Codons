@@ -1,0 +1,1 @@
+## Optimale Synonyme Codons
