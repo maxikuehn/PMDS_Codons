@@ -20,11 +20,11 @@ def verifyData(records) -> dict:
             removedRecords.append(val.id)
             reportData['modThree'] +=1
         #Überprüft ob Stop Codon nicht nur am Ende steht
-        if('*' in seq.translate()[:-1]):
+        elif('*' in seq.translate()[:-1]):
             removedRecords.append(val.id)
             reportData['stopCodon'] +=1
         #Prüft anhand des "SEquence Globally Unique IDentifier" ob Sequenz bereits da ist.
-        if(key in checkSum):
+        elif(key in checkSum):
             removedRecords.append(val.id)
             reportData['doubleData'] +=1
         else:
@@ -34,9 +34,16 @@ def verifyData(records) -> dict:
         del records[key]
     return {"records": records,"report":reportData}
 
-records = SeqIO.to_dict(SeqIO.parse("data\E.Coli\GCA_000005845.2\cds_from_genomic.fna", "fasta"))
+recordsEColi = SeqIO.to_dict(SeqIO.parse("data\E.Coli\GCA_000005845.2\cds_from_genomic.fna", "fasta"))
+recordsFly = SeqIO.to_dict(SeqIO.parse("data\Drosophila.Melanogaster\cds_from_genomic.fna", "fasta"))
+recordsHuman= SeqIO.to_dict(SeqIO.parse("data\Homo.Sapiens\cds_from_genomic.fna", "fasta"))
 
-cleanRecords = verifyData(records=records)
-print(cleanRecords['report'])
-print(len(cleanRecords['records']))
+def printCleanRecord(record):
+    cleanRecords = verifyData(records=record)
+    print(cleanRecords['report'])
+    #print(len(cleanRecords['records']))
 
+
+printCleanRecord(recordsEColi)
+printCleanRecord(recordsFly)
+printCleanRecord(recordsHuman)
