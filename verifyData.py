@@ -10,6 +10,7 @@ def verifyData(records) -> dict:
         'modThree': 0,
         'stopCodon':0,
         'doubleData': 0,
+        'noStartCodon':0,
         'oldLength': len(records)
         }
     for val in records.values():
@@ -27,6 +28,10 @@ def verifyData(records) -> dict:
         elif(key in checkSum):
             removedRecords.append(val.id)
             reportData['doubleData'] +=1
+        #Prüft ob Sequenz *nicht* mit StartCodon 'ATG' beginnt.
+        elif not seq[0:3] == "ATG":
+            removedRecords.append(val.id)
+            reportData['noStartCodon']+=1
         else:
             checkSum.append(key)
     #Entfernt alle fehlerhaften Datensätze
