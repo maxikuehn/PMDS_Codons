@@ -1,7 +1,7 @@
 
 from Bio import SeqIO
 from Bio.SeqUtils import CheckSum
-
+import time
 
 def verifyData(records) -> dict:
     removedRecords = []
@@ -17,7 +17,7 @@ def verifyData(records) -> dict:
         seq = val.seq
         key = CheckSum.seguid(seq)
         #Überprüft ob Sequenz durch drei Teilbar
-        if(len(seq)%3 != 0):
+        if not len(seq)%3 == 0:
             removedRecords.append(val.id)
             reportData['modThree'] +=1
         #Überprüft ob Stop Codon nicht nur am Ende steht
@@ -35,8 +35,7 @@ def verifyData(records) -> dict:
         else:
             checkSum.append(key)
     #Entfernt alle fehlerhaften Datensätze
-    for key in removedRecords:
-        del records[key]
+    [record for record in records if record not in removedRecords]
     return {"records": records,"report":reportData}
 
 recordsEColi = SeqIO.to_dict(SeqIO.parse("data\E.Coli\GCA_000005845.2\cds_from_genomic.fna", "fasta"))
@@ -49,6 +48,9 @@ def printCleanRecord(record):
     #print(len(cleanRecords['records']))
 
 
-printCleanRecord(recordsEColi)
-printCleanRecord(recordsFly)
+# printCleanRecord(recordsEColi)
+# printCleanRecord(recordsFly)
+start = time.time()
 printCleanRecord(recordsHuman)
+end = time.time()
+print(end-start)
