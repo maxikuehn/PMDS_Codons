@@ -1,7 +1,7 @@
 
 from Bio import SeqIO
 from Bio.SeqUtils import CheckSum
-import time
+
 
 def verifyData(records) -> dict:
     removedRecords = []
@@ -38,19 +38,15 @@ def verifyData(records) -> dict:
     [record for record in records if record not in removedRecords]
     return {"records": records,"report":reportData}
 
-recordsEColi = SeqIO.to_dict(SeqIO.parse("data\E.Coli\GCA_000005845.2\cds_from_genomic.fna", "fasta"))
-recordsFly = SeqIO.to_dict(SeqIO.parse("data\Drosophila.Melanogaster\cds_from_genomic.fna", "fasta"))
-recordsHuman= SeqIO.to_dict(SeqIO.parse("data\Homo.Sapiens\cds_from_genomic.fna", "fasta"))
+recordsEColi = SeqIO.to_dict(SeqIO.parse("Codons\data\E.Coli\GCA_000005845.2\cds_from_genomic.fna", "fasta"))
+# recordsFly = SeqIO.to_dict(SeqIO.parse("data\Drosophila.Melanogaster\cds_from_genomic.fna", "fasta"))
+# recordsHuman= SeqIO.to_dict(SeqIO.parse("data\Homo.Sapiens\cds_from_genomic.fna", "fasta"))
 
 def printCleanRecord(record):
     cleanRecords = verifyData(records=record)
     print(cleanRecords['report'])
-    #print(len(cleanRecords['records']))
+    print(len(cleanRecords['records']))   
 
-
-# printCleanRecord(recordsEColi)
+printCleanRecord(recordsEColi)
 # printCleanRecord(recordsFly)
-start = time.time()
-printCleanRecord(recordsHuman)
-end = time.time()
-print(end-start)
+# printCleanRecord(recordsHuman)
