@@ -55,7 +55,7 @@ class Baseline_classificator:
     def check_classificator(self, seqs: list[str],trueCodons: str, seed_number: int=42):
         seed(seed_number)
         checkedV = [self.check_codons(trueCodons, self.get_codons(seq)) for seq in seqs]
-        return(median(checkedV))
+        return(checkedV)
 
 
 
