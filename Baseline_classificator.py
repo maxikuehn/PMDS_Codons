@@ -4,38 +4,7 @@ from numpy.random import choice
 
 
 class Baseline_classificator:
-    def __init__(self, amino_dict):
-        self.amino_dict = amino_dict
-
-# Funktion, um ein zufälliges Codon für die Säure c zu erhalten. Hierzu wird de Wahrscheinlichkeit im dict verwendet.
-    def get_codon(self, c):
-        codon = choice(list(amino_dict[c].keys()), 1,
-                   p=list(amino_dict[c].values()))
-        return codon[0]
-
-# Funktion, um Codons für eine Sequenz zu generieren
-    def get_codons(self, seq: str) -> str:
-        return ''.join([self.get_codon(c) for c in seq])
-
-# Funktion, um die Übereinstimmung von Codons zwischen zwei Sequenzen zu überprüfen
-# die Anzahl an richtigen Codons wird durch die Anzahl vorhandener Codons geteilt
-    def check_codons(self, true_seq: str, check_seq: str):
-        amount = len(true_seq) / 3 
-        true_codons = 0
-        for i in range(0, len(true_seq), 3):
-            if true_seq[i:i + 3] == check_seq[i:i + 3]:
-                true_codons += 1
-        return true_codons / amount
-
-
-
-    def check_classificator(self, seed_number: int, seq: str,trueCodons: str):
-        seed(seed_number)
-        checkedV = [self.check_codons(trueCodons, self.get_codons(seq)) for i in range(0, 1000)]
-        return(median(checkedV))
-
-
-amino_dict = {
+    amino_dict_unweighted = {
     'A': {'GCT': 1/4, 'GCC': 1/4, 'GCA': 1/4, 'GCG': 1/4},
     'R': {'CGT': 1/6, 'CGC': 1/6, 'CGA': 1/6, 'CGG': 1/6, 'AGA': 1/6, 'AGG': 1/6},
     'N': {'AAT': 1/2, 'AAC': 1/2},
@@ -58,11 +27,44 @@ amino_dict = {
     'V': {'GTT': 1/4, 'GTC': 1/4, 'GTA': 1/4, 'GTG': 1/4}
 }
 
+    def __init__(self, amino_dict= amino_dict_unweighted):
+        self.amino_dict = amino_dict
+
+# Funktion, um ein zufälliges Codon für die Säure c zu erhalten. Hierzu wird de Wahrscheinlichkeit im dict verwendet.
+    def get_codon(self, c):
+        codon = choice(list(self.amino_dict[c].keys()), 1,
+                   p=list(self.amino_dict[c].values()))
+        return codon[0]
+
+# Funktion, um Codons für eine Sequenz zu generieren
+    def get_codons(self, seq: str) -> str:
+        return ''.join([self.get_codon(c) for c in seq])
+
+# Funktion, um die Übereinstimmung von Codons zwischen zwei Sequenzen zu überprüfen
+# die Anzahl an richtigen Codons wird durch die Anzahl vorhandener Codons geteilt
+    def check_codons(self, true_seq: str, check_seq: str):
+        amount = len(true_seq) / 3 
+        true_codons = 0
+        for i in range(0, len(true_seq), 3):
+            if true_seq[i:i + 3] == check_seq[i:i + 3]:
+                true_codons += 1
+        return true_codons / amount
 
 
 
-Baseline_classificator_one = Baseline_classificator(amino_dict)
+    def check_classificator(self, seqs: list[str],trueCodons: str, seed_number: int=42):
+        seed(seed_number)
+        checkedV = [self.check_codons(trueCodons, self.get_codons(seq)) for seq in seqs]
+        return(checkedV)
+
+
+
+
+
+
+
+Baseline_classificator_one = Baseline_classificator()
 seq ='AAERHA'
 true_seq = Baseline_classificator_one.get_codons(seq)
-m= Baseline_classificator_one.check_classificator(42, seq, true_seq)
+m= Baseline_classificator_one.check_classificator( seq, true_seq, seed_number=50)
 print(m)
