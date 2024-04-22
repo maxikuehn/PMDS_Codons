@@ -24,8 +24,8 @@ class Baseline_classificator:
     'T': {'ACT': 1/4, 'ACC': 1/4, 'ACA': 1/4, 'ACG': 1/4},
     'W': {'TGG': 1},
     'Y': {'TAT': 1/2, 'TAC': 1/2},
-    'V': {'GTT': 1/4, 'GTC': 1/4, 'GTA': 1/4, 'GTG': 1/4}
-}
+    'V': {'GTT': 1/4, 'GTC': 1/4, 'GTA': 1/4, 'GTG': 1/4},
+    '*':{'TAA':1/3,'TAG':1/3,'TGA':1/3}}
 
     def __init__(self, amino_dict= amino_dict_unweighted):
         self.amino_dict = amino_dict
@@ -50,21 +50,43 @@ class Baseline_classificator:
                 true_codons += 1
         return true_codons / amount
 
-
-
     def check_classificator(self, seqs: list[str],trueCodons: str, seed_number: int=42):
         seed(seed_number)
         checkedV = [self.check_codons(trueCodons, self.get_codons(seq)) for seq in seqs]
         return(checkedV)
 
+    def check_seq(self, seq:str, guessed_codons:str):
+        amount = len(seq)/3
+        true_codons = 0
+        for j in range(0, len(seq), 3):
+                if seq[j:j + 3] == guessed_codons[j:j + 3]:
+                    true_codons += 1
+        return[true_codons,amount]
+        
+    def check_classificator_new(self, df, seed_number: int=1):
+        true_codons = 0
+        amount = 0
+        for i in df.index:
+            tmp= self.check_seq(df['sequence'][i],self.get_codons(df['translation'][i].seq))
+            true_codons += tmp[0]
+            amount += tmp[1]
+        error_rate= 1-amount/true_codons
+        return {'amount': amount, 'true_codons': true_codons,'error_rate:':error_rate}
+
+def get_highest(bias):
+    max_dict = {}
+    for key, sub_dict in bias.items():
+        max_dict[key]={}
+        for k,v in sub_dict.items():   
+            if v==max(sub_dict.values()):
+                max_dict[key][k]=1
+    return max_dict
+#import pandas as pd
+#dfs = {}
+#dfs['E.Coli'] = pd.read_pickle(f"data\E.Coli\cleanedData.pkl")
 
 
+#classificator = Baseline_classificator()
 
-
-
-
-Baseline_classificator_one = Baseline_classificator()
-seq ='AAERHA'
-true_seq = Baseline_classificator_one.get_codons(seq)
-m= Baseline_classificator_one.check_classificator( seq, true_seq, seed_number=50)
-print(m)
+#tmp = classificator.check_classificator_new(dfs['E.Coli'])
+#print(tmp)
