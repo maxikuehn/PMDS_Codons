@@ -48,29 +48,22 @@ class Baseline_classificator:
         for i in range(0, len(true_seq), 3):
             if true_seq[i:i + 3] == check_seq[i:i + 3]:
                 true_codons += 1
-        return true_codons / amount
-
+        return [true_codons,amount]
     def check_classificator(self, seqs: list[str],trueCodons: str, seed_number: int=42):
         seed(seed_number)
         checkedV = [self.check_codons(trueCodons, self.get_codons(seq)) for seq in seqs]
         return(checkedV)
 
-    def check_seq(self, seq:str, guessed_codons:str):
-        amount = len(seq)/3
-        true_codons = 0
-        for j in range(0, len(seq), 3):
-                if seq[j:j + 3] == guessed_codons[j:j + 3]:
-                    true_codons += 1
-        return[true_codons,amount]
         
     def check_classificator_new(self, df, seed_number: int=1):
+        seed(seed_number)
         true_codons = 0
         amount = 0
         for i in df.index:
-            tmp= self.check_seq(df['sequence'][i],self.get_codons(df['translation'][i].seq))
+            tmp= self.check_codons(df['sequence'][i],self.get_codons(df['translation'][i].seq))
             true_codons += tmp[0]
             amount += tmp[1]
-        error_rate= 1-amount/true_codons
+        error_rate= 1-(true_codons/amount)
         return {'amount': amount, 'true_codons': true_codons,'error_rate:':error_rate}
 
 def get_highest(bias):
