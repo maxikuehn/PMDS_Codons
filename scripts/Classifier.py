@@ -7,7 +7,8 @@ class Classifier:
         random.seed(seed)
 
     # receives a list of amino acid or codon sequences and returns a padded matrix with the amino acids (per sequence a row)
-    def pad_and_convert_seq(self, seq, pad=''):
+    @staticmethod
+    def pad_and_convert_seq(seq, pad=''):
         max_length = max(len(s) for s in seq)
         padded_sequences = [s + [pad] * (max_length - len(s)) for s in seq]
         seq_matrix = np.array(padded_sequences)
