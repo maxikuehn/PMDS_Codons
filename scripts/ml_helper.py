@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pandas as pd
 from Bio.Seq import Seq
 import torch
@@ -23,13 +25,13 @@ integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 def aa_to_onehot_tensor(seq: Seq) -> Tensor:
     encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq])
     one_hot_tensor = F.one_hot(encoded_sequence, num_classes=len(amino_acids))
-    return one_hot_tensor
+    return one_hot_tensor.float()
 
 
 def codon_to_tensor(seq: Seq) -> Tensor:
     codon_seq = [seq[i:i + 3] for i in range(0, len(seq), 3)]
     tensor = torch.as_tensor([codons_to_integer[c] for c in codon_seq])
-    return tensor
+    return tensor.float()
 
 
 def codon_from_output(output: Tensor):
@@ -42,7 +44,8 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
 
 class CodonDataset(Dataset):
-    def __init__(self, organism: str):
+    def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
+                 padding: Literal["left", "right"] = None, padding_char: str = "0"):
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
         self.df = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
