@@ -4,6 +4,7 @@ import pandas as pd
 from Bio.Seq import Seq
 import torch
 import torch.nn.functional as F
+from Bio.SeqRecord import SeqRecord
 from torch import Tensor
 from torch.utils.data import Dataset
 
@@ -40,7 +41,12 @@ def codon_from_output(output: Tensor):
     return codons[category_i], category_i
 
 
+def convert_record_to_string(rec: SeqRecord) -> str:
+    return str(rec.seq)
+
+
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
+padding_options = ["left", "right"]
 
 
 class CodonDataset(Dataset):
@@ -48,7 +54,16 @@ class CodonDataset(Dataset):
                  padding: Literal["left", "right"] = None, padding_char: str = "0"):
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
-        self.df = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
+        if padding is not None and padding not in padding_options:
+            raise ValueError(f"Padding '{padding}' is not in {padding_options}")
+
+        self.df: pd.DataFrame = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
+        if padding is not None:
+            self._max_seq_length = self.df["translation"].apply(len).max()
+            translation_series = self.df["translation"].apply(convert_record_to_string)
+            translation_series = translation_series.str.pad(width=0, side=padding,
+                                                            fillchar=padding_char)
+            self.df["translation"] = translation_series
 
     def __len__(self):
         return len(self.df)
