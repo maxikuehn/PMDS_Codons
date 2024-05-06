@@ -7,11 +7,6 @@ from Bio.Seq import Seq
 import torch.nn as nn
 import torch.optim as optim
 
-
-
-# NOTE: Questions
-# Why all codons as output why not 6?
-
 # NOTE: command for development
 # Check if CUDA (GPU support) is available
 # if torch.cuda.is_available():
