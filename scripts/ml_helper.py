@@ -70,14 +70,13 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
 class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
-                 min_length: int = None, max_length: int = None, split: Literal["train", "test"] = "train",
+                 split: Literal["train", "test"] = "train",
+                 min_length: int = None, max_length: int = None, 
                  padding_pos: Literal["left", "right"] = "right"):
-        # TODO split
-
         padding_char = "_"
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
-        df = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
+        df = pd.read_pickle(f"../data/{organism}/cleanedData_{split}.pkl")
         df = filter_sequence_length(df, min_length, max_length)
         df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, padding_char))
         df["translation"] = df["translation"].apply(aa_to_onehot_tensor)
