@@ -29,6 +29,10 @@ def aa_to_onehot_tensor(seq: Seq) -> Tensor:
     one_hot_tensor = F.one_hot(encoded_sequence, num_classes=len(amino_acids))
     return one_hot_tensor.float()
 
+def aa_to_int_tensor(seq: Seq) -> Tensor:
+    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq])
+    return encoded_sequence.int()
+
 
 def codon_to_tensor(seq: Seq) -> Tensor:
     codon_seq = [seq[i:i + 3] for i in range(0, len(seq), 3)]
@@ -72,14 +76,18 @@ class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
                  min_length: int = None, max_length: int = None, 
-                 padding_pos: Literal["left", "right"] = "right"):
+                 padding_pos: Literal["left", "right"] = "right",
+                 one_hot_aa: bool = True):
         padding_char = "_"
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
         df = pd.read_pickle(f"../data/{organism}/cleanedData_{split}.pkl")
         df = filter_sequence_length(df, min_length, max_length)
         df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, padding_char))
-        df["translation"] = df["translation"].apply(aa_to_onehot_tensor)
+        if one_hot_aa:
+            df["translation"] = df["translation"].apply(aa_to_onehot_tensor)
+        else:
+            df["translation"] = df["translation"].apply(aa_to_int_tensor)
         df["sequence"] = df["sequence"].apply(pad_sequence, args=(max_length, padding_pos, padding_char, False, 3))
         df["sequence"] = df["sequence"].apply(codon_to_tensor)
         self.df = df
