@@ -1,13 +1,15 @@
-from typing import Literal
+from typing import Literal, Union
 
 import pandas as pd
 from Bio.Seq import Seq
 import torch
 import torch.nn.functional as F
+from Bio.SeqRecord import SeqRecord
 from torch import Tensor
 from torch.utils.data import Dataset
 
-amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*','_']
+amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*',
+               '_']
 
 aminoacids_to_integer = dict((a, i) for i, a in enumerate(amino_acids))
 integer_to_aminoacids = dict((i, a) for i, a in enumerate(amino_acids))
@@ -33,39 +35,46 @@ def codon_to_tensor(seq: Seq) -> Tensor:
     tensor = torch.as_tensor([codons_to_integer[c] for c in codon_seq])
     return tensor.float()
 
+
 def codon_from_output(output: Tensor):
     top_n, top_i = output.topk(1)
     category_i = top_i[0].item()
     return codons[category_i], category_i
 
+
 def filter_sequence_length(df, min_length, max_length):
     df['sequence_length'] = df["translation"].apply(len)
-    if min_length == None:
+    if min_length is None:
         min_length = 0
-    if max_length == None:
+    if max_length is None:
         max_length = df['sequence_length'].max()
     filtered_df = df[(df['sequence_length'] >= min_length) & (df['sequence_length'] <= max_length)]
     filtered_df.drop(columns=['sequence_length'], inplace=True)
     return filtered_df
 
-def pad_sequence(seq, max_length, padding_pos, padding_char, seqRecord=True, padding_freq=1):
+
+def pad_sequence(seq: Union[Seq, SeqRecord], max_length, padding_pos, padding_char, seqRecord=True, padding_freq=1):
     if seqRecord:
         seq = seq.seq
-    if max_length != None:
-        if len(seq)/padding_freq < max_length:
+    if max_length is not None:
+        if len(seq) / padding_freq < max_length:
             if padding_pos == "left":
-                seq = padding_char * padding_freq * (max_length - int(len(seq)/padding_freq)) + seq
+                seq = padding_char * padding_freq * (max_length - int(len(seq) / padding_freq)) + seq
             elif padding_pos == "right":
-                seq = seq + padding_char * padding_freq * (max_length - int(len(seq)/padding_freq))
+                seq = seq + padding_char * padding_freq * (max_length - int(len(seq) / padding_freq))
     return seq
+
 
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
 
 class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
-                 min_length: int = None, max_length: int = None,
-                 padding_pos: Literal["left", "right"] = "right", padding_char: str = "_"):
+                 min_length: int = None, max_length: int = None, split: Literal["train", "test"] = "train",
+                 padding_pos: Literal["left", "right"] = "right"):
+        # TODO split
+
+        padding_char = "_"
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
         df = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
