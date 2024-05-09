@@ -1,3 +1,5 @@
 .idea/
 .env
 *.local
+__pycache__/
+.DS_Store

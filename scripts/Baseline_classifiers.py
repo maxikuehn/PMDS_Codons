@@ -14,6 +14,8 @@ class Bias_Weighted_Classifier(Classifier):
     def _predict_codon(self, amino_acid):
         if amino_acid == '':
             return ''
+        if amino_acid == 'X':
+            return 'NNN'
         probabilities = list(self.bias[amino_acid].values())
         codons = list(self.bias[amino_acid].keys())
         random_codon = random.choices(codons, weights=probabilities)[0]
