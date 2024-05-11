@@ -17,9 +17,9 @@ from itertools import product
     ##  +-----+-----+-----+-----+
     ##  | 010 | 100 | 111 | 001 |
     ##  +-----+-----+-----+-----+
-
-#DONE#TODO -> Mithilfe dieses Encodings schauen ob die Codons mit dem höchsten CUB auch die mit dem höchsten Numerischen Wert sind (oder die am wenigsten vorkommenden)
-#TODO -> BinaryEncoding Permutation
+    ##  | 101 | 011 | 000 | 110 |  <-- Bitflip
+    ##  +-----+-----+-----+-----+
+#DONE -> Mithilfe dieses Encodings schauen ob die Codons mit dem höchsten CUB auch die mit dem höchsten Numerischen Wert sind (oder die am wenigsten vorkommenden)
 
 def purineOrPyrimidine(codon:str)->str:
     return "".join([puriPyriDict[x] for x in codon])
@@ -34,15 +34,26 @@ def encodeCodons(codon:str)->str:
     binaryEncodedBases = {'A':'010','C':'100','G':'111','T':'001'}
     return "".join([binaryEncodedBases[x] for x in codon])
      
+def encodeCodonsInverse(codon:str)->str:
+    inverseEncodedBases = {'A':'101','C':'011','G':'000','T':'110'}
+    return "".join([inverseEncodedBases[x] for x in codon])
 
-def scoreByChemProp(PATH:str,CODONLIST:list):    
-    df = pd.read_pickle(PATH)
+def scoreByChemProp(dataFrame,CODONLIST:list,inverse:bool):    
+    df = dataFrame
     filteredByAA = []
-    for index in range(len(df)):
-        sequence = str(df.iloc[index].sequence)
-        codon_score_pairs = [(sequence[x:x+3],int(encodeCodons(sequence[x:x+3]),2),twoOrthreeHydrogenBonds(sequence[x:x+3]),purineOrPyrimidine(sequence[x:x+3]),ketoOrAmino(sequence[x:x+3])) for x in range(0,len(sequence)-3,3)]
-        sortedByEncoding = sorted(codon_score_pairs,key=lambda entry:entry[1])
-        filteredByAA += [x for x in filter(lambda g: g[0] in CODONLIST,sortedByEncoding)]
+    if not inverse:
+        for index in range(len(df)):
+            sequence = str(df.iloc[index].sequence)
+            codon_score_pairs = [(sequence[x:x+3],int(encodeCodons(sequence[x:x+3]),2),twoOrthreeHydrogenBonds(sequence[x:x+3]),purineOrPyrimidine(sequence[x:x+3]),ketoOrAmino(sequence[x:x+3])) for x in range(0,len(sequence)-3,3)]
+            sortedByEncoding = sorted(codon_score_pairs,key=lambda entry:entry[1])
+            filteredByAA += [x for x in filter(lambda g: g[0] in CODONLIST,sortedByEncoding)]
+    else:
+        for index in range(len(df)):
+            sequence = str(df.iloc[index].sequence)
+            codon_score_pairs = [(sequence[x:x+3],int(encodeCodonsInverse(sequence[x:x+3]),2),twoOrthreeHydrogenBonds(sequence[x:x+3]),purineOrPyrimidine(sequence[x:x+3]),ketoOrAmino(sequence[x:x+3])) for x in range(0,len(sequence)-3,3)]
+            sortedByEncoding = sorted(codon_score_pairs,key=lambda entry:entry[1])
+            filteredByAA += [x for x in filter(lambda g: g[0] in CODONLIST,sortedByEncoding)]
+
     return pd.DataFrame(data=filteredByAA,columns=['CODON','SCORE','HYDROGEN','PURI_PYRI','KETO_AMINO'])
 
 def scoreByChemPropContext(PATH:str,CODONLIST:list,vicinity:int):
@@ -86,7 +97,6 @@ def addRuns(matrix,seq:str,mapping_dict:dict,stepWidth:int):
         i = returnIndex(mapping_dict,seq[x:x+stepWidth])
         j = returnIndex(mapping_dict,seq[x+stepWidth:x+(2*stepWidth)])
         matrix[i,j]+=1   
-    # [x[0] for x in mapping_dict.items() if x[1]==seq[x:x+stepWidth]]
     return matrix
 
 def calcTransitionRatio(matrix):
@@ -107,7 +117,6 @@ def calcTransitionRatio(matrix):
                 continue
             rhc1_c2 = matrix[index,leftover]/all_transitions
             implicitRatio[index,leftover] = rhc1_c2 / soloRatio[index-1]*soloRatio[leftover-1]
-
     return implicitRatio
 
 
@@ -119,19 +128,7 @@ def kindaBLOSUMcodons(sequences:list):
     transitionRatios = calcTransitionRatio(matrix)
     fig,ax = plt.subplots()
     sns.heatmap(transitionRatios[1:,1:],annot=True,cbar=True,cmap='mako',linewidths=.5,xticklabels=codonList,yticklabels=codonList)
-    # im = ax.imshow(matrix[1:,1:])
-    # ax.set_xticks(np.arange(1,65),labels=codonList)
-    # ax.set_yticks(np.arange(1,65),labels=codonList)
-    # plt.setp(ax.get_xticklabels(),rotation=45)
-    # for x in range(0,65):
-    #     for y in range(0,65):
-    #        if x == 0 and y == 0:
-    #            continue
-    #        text = ax.text(y,x,matrix[x,y],color='w',va='center',ha='center')
-    # ax.set_title("Text")
-    # fig.tight_layout()
     plt.show()
-    #[[matrix[codon_mapping_dict[sequence[x:x+3]],codon_mapping_dict[sequence[x+3:x+6]]] for x in range(len(sequence),3)]for sequence in sequences]
 
 def kindaBLOSUMaminos(sequences:list,plot_title:str):
     matrix,amino_mapping_dict = setupAminoMatrix()
@@ -145,7 +142,6 @@ def kindaBLOSUMaminos(sequences:list,plot_title:str):
     plt.show()
 
 
-#DONE #TODO Visualisieren und abhängigkeit der Umgebung -> Zahlendurchschnitt
 PATH = "data/E.Coli/cleanedData.pkl"
 puriPyriDict = {'C':'Y','G':'P','A':'P','T':'Y'}
 hydrogenDict = {'G':3,'C':3,'A':2,'T':2}
@@ -172,20 +168,8 @@ aminoDecoding = {'M': ['ATG'],
  'Y': ['TAC', 'TAT'],
  'W': ['TGG']}
 
-# inMiddle = scoreByChemPropContext(PATH,aminoDecoding['C'],2)
-# codon_in_middle_score_counts = inMiddle.groupby('subsequence').agg('value_counts')
-# print(codon_in_middle_score_counts)
-# print(codon_in_middle_score_counts.shape[0])
-
-# singleCodonScores = scoreByChemProp(PATH,aminoDecoding['H'])
-# codon_score_counts = singleCodonScores.groupby('HYDROGEN').agg('value_counts')
-# codon_score_counts.plot.pie(autopct="%1.0f%%")
-df = pd.read_pickle(PATH)
-codon_sequences = df['sequence'].tolist()
-amino_sequences = df['translation'].apply(lambda x: x.seq).tolist()
-# kindaBLOSUMcodons(codon_sequences)
-kindaBLOSUMaminos(amino_sequences,'E.Coli')
-# plt.title('Verteilung Codons nach Score')
-# plt.ylabel('%-anteil')
-# plt.legend(title=str(codon_score_counts.index.names),loc=(1.2,0.5))
-# plt.show()
+# df = pd.read_pickle(PATH)
+# codon_sequences = df['sequence'].tolist()
+# amino_sequences = df['translation'].apply(lambda x: x.seq).tolist()
+# kindaBLOSUMaminos(amino_sequences,'E.Coli')
+# scoreByChemProp(df,aminoDecoding['I'],True)
