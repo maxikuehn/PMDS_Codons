@@ -19,8 +19,8 @@ class Classifier:
         pass
 
     # receives a matrix with true codons and a matrix of predicted codons and counts the number of errors
-    def _count_errors(self, true_codons, pred_codons):
-        error_num = np.sum(pred_codons[pred_codons != ''] != true_codons[true_codons != ''])
+    def _count_errors(self, true_codons, pred_codons, pad=''):
+        error_num = np.sum(pred_codons[pred_codons != pad] != true_codons[true_codons != pad])
         return error_num
     
     # receives a matrix with true codons and a matrix of predicted codons and counts the number of errors per amino acid
@@ -36,10 +36,10 @@ class Classifier:
         return amino_acid_errors
     
     # calculates the error rate E = F / G (F: total number of errors, G: total number of codons)
-    def calc_error_rate(self, true_codons, pred_codons):
+    def calc_error_rate(self, true_codons, pred_codons, pad=''):
         true_codons = self.pad_and_convert_seq(true_codons)
         error_num = self._count_errors(true_codons, pred_codons)
-        return error_num / true_codons[true_codons != ''].size
+        return error_num / true_codons[true_codons != pad].size
     
     # calculates the error rate per amino acid
     def calc_amino_acid_error_rate(self, amino_seq, true_codons, pred_codons):

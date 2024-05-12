@@ -24,19 +24,19 @@ codons_to_integer = dict((c, i) for i, c in enumerate(codons))
 integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 
 
-def aa_to_onehot_tensor(seq: Seq) -> Tensor:
-    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq])
+def aa_to_onehot_tensor(seq: Seq, device) -> Tensor:
+    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq]).to(device)
     one_hot_tensor = F.one_hot(encoded_sequence, num_classes=len(amino_acids))
     return one_hot_tensor.float()
 
-def aa_to_int_tensor(seq: Seq) -> Tensor:
-    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq])
+def aa_to_int_tensor(seq: Seq, device) -> Tensor:
+    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq]).to(device)
     return encoded_sequence.int()
 
 
-def codon_to_tensor(seq: Seq) -> Tensor:
+def codon_to_tensor(seq: Seq, device) -> Tensor:
     codon_seq = [seq[i:i + 3] for i in range(0, len(seq), 3)]
-    tensor = torch.as_tensor([codons_to_integer[c] for c in codon_seq])
+    tensor = torch.as_tensor([codons_to_integer[c] for c in codon_seq]).to(device)
     return tensor.float()
 
 
@@ -77,19 +77,22 @@ class CodonDataset(Dataset):
                  split: Literal["train", "test"] = "train",
                  min_length: int = None, max_length: int = None, 
                  padding_pos: Literal["left", "right"] = "right",
-                 one_hot_aa: bool = True):
+                 one_hot_aa: bool = True,
+                 data_path="../data",
+                 device=torch.device("cpu")):
+        self.device = device
         padding_char = "_"
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
-        df = pd.read_pickle(f"../data/{organism}/cleanedData_{split}.pkl")
+        df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
         df = filter_sequence_length(df, min_length, max_length)
         df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, padding_char))
         if one_hot_aa:
-            df["translation"] = df["translation"].apply(aa_to_onehot_tensor)
+            df["translation"] = df["translation"].apply(aa_to_onehot_tensor, device=device)
         else:
-            df["translation"] = df["translation"].apply(aa_to_int_tensor)
+            df["translation"] = df["translation"].apply(aa_to_int_tensor, device=device)
         df["sequence"] = df["sequence"].apply(pad_sequence, args=(max_length, padding_pos, padding_char, False, 3))
-        df["sequence"] = df["sequence"].apply(codon_to_tensor)
+        df["sequence"] = df["sequence"].apply(codon_to_tensor, device=device)
         self.df = df
 
     def __len__(self):
