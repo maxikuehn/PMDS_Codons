@@ -30,6 +30,7 @@ def aa_to_onehot_tensor(seq: Seq, device) -> Tensor:
     one_hot_tensor = F.one_hot(encoded_sequence, num_classes=len(amino_acids))
     return one_hot_tensor.float()
 
+
 def aa_to_int_tensor(seq: Seq, device) -> Tensor:
     encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq]).to(device)
     return encoded_sequence.int()
