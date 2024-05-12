@@ -5,6 +5,7 @@ from Bio.Seq import Seq
 import torch
 import torch.nn.functional as F
 from Bio.SeqRecord import SeqRecord
+from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import Dataset
 
@@ -52,8 +53,8 @@ def filter_sequence_length(df, min_length, max_length):
         min_length = 0
     if max_length is None:
         max_length = df['sequence_length'].max()
-    filtered_df = df[(df['sequence_length'] >= min_length) & (df['sequence_length'] <= max_length)]
-    filtered_df.drop(columns=['sequence_length'], inplace=True)
+    filtered_df: DataFrame = df[(df['sequence_length'] >= min_length) & (df['sequence_length'] <= max_length)]
+    filtered_df = filtered_df.drop(columns=['sequence_length'])
     return filtered_df
 
 
@@ -75,7 +76,7 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
-                 min_length: int = None, max_length: int = None, 
+                 min_length: int = None, max_length: int = None,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
                  data_path="../data",
