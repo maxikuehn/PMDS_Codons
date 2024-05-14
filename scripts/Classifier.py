@@ -41,6 +41,11 @@ class Classifier:
         error_num = self._count_errors(true_codons, pred_codons)
         return error_num / true_codons[true_codons != pad].size
     
+    # calculates the accuracy = 1 - E
+    def calc_accuracy(self, true_codons, pred_codons, pad=''):
+        error_rate = self.calc_error_rate(true_codons, pred_codons, pad=pad)
+        return 1 - error_rate
+    
     # calculates the error rate per amino acid
     def calc_amino_acid_error_rate(self, amino_seq, true_codons, pred_codons):
         amino_seq = self.pad_and_convert_seq(amino_seq)
@@ -50,4 +55,11 @@ class Classifier:
         for amino_acid in amino_acid_errors:
             error_rates[amino_acid] = amino_acid_errors[amino_acid]['errors'] / amino_acid_errors[amino_acid]['total']
         return error_rates
-
+    
+    # calculates the accuracies per amino acid
+    def calc_amino_acid_accuracies(self, amino_seq, true_codons, pred_codons):
+        error_rates = self.calc_amino_acid_error_rate(amino_seq, true_codons, pred_codons)
+        accuracies = {}
+        for amino_acid in error_rates:
+            accuracies[amino_acid] = 1 - error_rates[amino_acid]
+        return accuracies
