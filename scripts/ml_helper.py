@@ -25,9 +25,9 @@ codons_to_integer = dict((c, i) for i, c in enumerate(codons))
 integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 
 
-def aa_to_onehot_tensor(seq: Seq, device) -> Tensor:
-    encoded_sequence = torch.as_tensor([aminoacids_to_integer[a] for a in seq]).to(device)
-    one_hot_tensor = F.one_hot(encoded_sequence, num_classes=len(amino_acids))
+def aa_int_to_onehot_tensor(tensor: Tensor) -> Tensor:
+    tensor = tensor.long()
+    one_hot_tensor = F.one_hot(tensor, num_classes=len(amino_acids))
     return one_hot_tensor.float()
 
 
@@ -59,6 +59,29 @@ def filter_sequence_length(df, min_length, max_length):
     return filtered_df
 
 
+# Function to split a tensor into chunks of max_length characters
+def _split_tensor(t, max_length=500):
+    chunk_tensors = [t[i:i+max_length] for i in range(0, len(t), max_length)]
+    return chunk_tensors
+
+
+def cut_sequences(df, max_length):
+    new_df = pd.DataFrame(columns=["translation", "sequence"])
+    new_rows = []
+    for _, row in df.iterrows():
+        aa_sequence = row["translation"]
+        codon_sequence = row["sequence"]
+        if aa_sequence.shape[0] <= max_length:
+            new_rows.append({"translation": row["translation"], "sequence": row["sequence"]})
+        elif aa_sequence.shape[0] > max_length:
+            aa_splits = _split_tensor(aa_sequence, max_length)
+            codon_splits = _split_tensor(codon_sequence, max_length)
+            for i, aa_split in enumerate(aa_splits):
+                new_rows.append({"translation": aa_split, "sequence": codon_splits[i]})
+    new_df = pd.DataFrame(new_rows)
+    return new_df
+
+
 def pad_sequence(seq: Union[Seq, SeqRecord], max_length, padding_pos, padding_char, seqRecord=True, padding_freq=1):
     if seqRecord:
         seq = seq.seq
@@ -71,6 +94,13 @@ def pad_sequence(seq: Union[Seq, SeqRecord], max_length, padding_pos, padding_ch
     return seq
 
 
+def pad_tensor(tensor: Tensor, max_length, padding_symbol, padding_pos):
+    if padding_pos == "left":
+        return F.pad(tensor, (max_length - len(tensor), 0), value=padding_symbol)
+    elif padding_pos == "right":
+        return F.pad(tensor, (0, max_length - len(tensor)), value=padding_symbol)
+
+
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
 
@@ -78,6 +108,7 @@ class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
                  min_length: int = None, max_length: int = None,
+                 cut_data = False,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
                  data_path="../data",
@@ -86,15 +117,21 @@ class CodonDataset(Dataset):
         padding_char = "_"
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
+        if cut_data and max_length == None:
+            raise ValueError(f"cut_data=True needs a given max_length to cut")
         df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
-        df = filter_sequence_length(df, min_length, max_length)
+        if not cut_data:
+            df = filter_sequence_length(df, min_length, max_length)
         df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, padding_char))
-        if one_hot_aa:
-            df["translation"] = df["translation"].apply(aa_to_onehot_tensor, device=device)
-        else:
-            df["translation"] = df["translation"].apply(aa_to_int_tensor, device=device)
+        df["translation"] = df["translation"].apply(aa_to_int_tensor, device=device)
         df["sequence"] = df["sequence"].apply(pad_sequence, args=(max_length, padding_pos, padding_char, False, 3))
         df["sequence"] = df["sequence"].apply(codon_to_tensor, device=device)
+        if cut_data:
+            df = cut_sequences(df, max_length)
+            df["translation"] = df["translation"].apply(pad_tensor, args=(max_length, aminoacids_to_integer['_'], padding_pos))
+            df["sequence"] = df["sequence"].apply(pad_tensor, args=(max_length, codons_to_integer["___"], padding_pos))
+        if one_hot_aa:
+            df["translation"] = df["translation"].apply(aa_int_to_onehot_tensor)
         self.df = df
 
     def __len__(self):
