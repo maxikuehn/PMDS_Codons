@@ -1,8 +1,11 @@
+import os
+import datetime
 from typing import Literal, Union
 
 import pandas as pd
 from Bio.Seq import Seq
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from Bio.SeqRecord import SeqRecord
 from pandas import DataFrame
@@ -108,7 +111,7 @@ class CodonDataset(Dataset):
     def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
                  min_length: int = None, max_length: int = None,
-                 cut_data = False,
+                 cut_data: bool = False,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
                  data_path="../data",
@@ -144,3 +147,33 @@ class CodonDataset(Dataset):
         codon_sequence = data["sequence"]
 
         return aa_sequence, codon_sequence
+
+
+def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str = None):
+    # timestamp
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y%m%d%H%M%S")
+
+    appendix = "_" + appendix if appendix is not None else ""
+
+    path = f"../ml_models/{organism}/{timestamp}_{model_name}{appendix}.pt"
+
+    # save model in ml_models in a single file
+    torch.save(model, path)
+    print(f"Model saved as tcn_{organism}_model_{timestamp}.pt")
+
+
+def load_model(model_name: str, organism: str):
+    # get the newest version of the tcn model
+    organism_models = os.listdir(f"../ml_models/{organism}")
+    # get all models from type
+    models = [model for model in organism_models if model_name in model]
+    # sort by date
+    models.sort()
+    # get newest model
+    newest_model = models[-1]
+    # load model
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = torch.load(f"../ml_models/{organism}/{newest_model}", map_location=device)
+    print(f"Model loaded: {newest_model}")
+    return model
