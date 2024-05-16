@@ -160,7 +160,7 @@ def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str 
 
     # save model in ml_models in a single file
     torch.save(model, path)
-    print(f"Model saved as tcn_{organism}_model_{timestamp}.pt")
+    print(f"Model saved as {timestamp}_{model_name}{appendix}.pt")
 
 
 def load_model(model_name: str, organism: str):
