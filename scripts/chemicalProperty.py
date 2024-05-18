@@ -104,17 +104,14 @@ def calcTransitionRatio(matrix):
     soloRatio = np.arange(len(matrix)-1)
     #berechne relative häufigkeit der einzelnen vorkommen
     for index in range(1,len(matrix)):
-        soloRatio[index-1] = (np.sum(matrix[index,:])+np.sum(matrix[:,index]))#-matrix[index,index]
+        soloRatio[index-1] = (np.sum(matrix[index,:])+np.sum(matrix[:,index]))-matrix[index,index]
     soloRatio = [element / all_transitions for element in soloRatio]
-    
     #berechne relative häufigkeit "c1 impliziert c2" bzw. auf c1 folgt c2
     implicitRatio = np.zeros(shape=matrix.shape)
     implicitRatio[0,:] = np.arange(len(matrix))
     implicitRatio[:,0] = np.arange(len(matrix))
     for index in range(1,len(matrix)):
         for leftover in range(1,len(matrix)):
-            if index == leftover:
-                continue
             rhc1_c2 = matrix[index,leftover]/all_transitions
             implicitRatio[index,leftover] = rhc1_c2 / soloRatio[index-1]*soloRatio[leftover-1]
     return implicitRatio
@@ -127,7 +124,10 @@ def kindaBLOSUMcodons(sequences:list):
         matrix = addRuns(matrix,sequence,codon_mapping_dict,3)
     transitionRatios = calcTransitionRatio(matrix)
     fig,ax = plt.subplots()
-    sns.heatmap(transitionRatios[1:,1:],annot=True,cbar=True,cmap='mako',linewidths=.5,xticklabels=codonList,yticklabels=codonList)
+    fig.set_size_inches(12,12)
+    sns.heatmap(transitionRatios[1:,1:],annot=False,cbar=True,cmap='mako',linewidths=.05,xticklabels=codonList,yticklabels=codonList)
+    ax.tick_params(labelsize=5)
+    ax.set_title("Nachbarschafts Abhängigkeit der Codons")
     plt.show()
 
 def kindaBLOSUMaminos(sequences:list,plot_title:str):
@@ -170,6 +170,7 @@ aminoDecoding = {'M': ['ATG'],
 
 # df = pd.read_pickle(PATH)
 # codon_sequences = df['sequence'].tolist()
+# kindaBLOSUMcodons(codon_sequences)
 # amino_sequences = df['translation'].apply(lambda x: x.seq).tolist()
 # kindaBLOSUMaminos(amino_sequences,'E.Coli')
 # scoreByChemProp(df,aminoDecoding['I'],True)
