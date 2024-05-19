@@ -108,21 +108,34 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
 
 class CodonDataset(Dataset):
-    def __init__(self, organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
+    def __init__(self,
+                 organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
-                 min_length: int = None, max_length: int = None,
+                 min_length: int = None,
+                 max_length: int = None,
                  cut_data: bool = False,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
                  data_path="../data",
                  device=torch.device("cpu")):
-        self.device = device
-        padding_char = "_"
+
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
         if cut_data and max_length == None:
             raise ValueError(f"cut_data=True needs a given max_length to cut")
+
+        self.organism = organism
+        self.split = split
+        self.min_length = min_length
+        self.max_length = max_length
+        self.cut_data = cut_data
+        self.padding_pos = padding_pos
+        self.one_hot_aa = one_hot_aa
+        self.device = device
+        self.padding_char = "_"
+
         df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
+
         if not cut_data:
             df = filter_sequence_length(df, min_length, max_length)
 
@@ -137,8 +150,10 @@ class CodonDataset(Dataset):
             df = cut_sequences(df, max_length)
             df["translation"] = df["translation"].apply(pad_tensor, args=(max_length, aminoacids_to_integer['_'], padding_pos))
             df["sequence"] = df["sequence"].apply(pad_tensor, args=(max_length, codons_to_integer["___"], padding_pos))
+
         if one_hot_aa:
             df["translation"] = df["translation"].apply(aa_int_to_onehot_tensor)
+
         self.df = df
 
     def __len__(self):
