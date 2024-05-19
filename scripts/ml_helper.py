@@ -125,10 +125,14 @@ class CodonDataset(Dataset):
         df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
         if not cut_data:
             df = filter_sequence_length(df, min_length, max_length)
-        df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, padding_char))
+
+        if padding_pos:
+            df["translation"] = df["translation"].apply(pad_sequence, args=(max_length, padding_pos, self.padding_char))
+            df["sequence"] = df["sequence"].apply(pad_sequence, args=(max_length, padding_pos, self.padding_char, False, 3))
+
         df["translation"] = df["translation"].apply(aa_to_int_tensor, device=device)
-        df["sequence"] = df["sequence"].apply(pad_sequence, args=(max_length, padding_pos, padding_char, False, 3))
         df["sequence"] = df["sequence"].apply(codon_to_tensor, device=device)
+
         if cut_data:
             df = cut_sequences(df, max_length)
             df["translation"] = df["translation"].apply(pad_tensor, args=(max_length, aminoacids_to_integer['_'], padding_pos))
