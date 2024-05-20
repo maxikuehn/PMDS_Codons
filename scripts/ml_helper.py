@@ -24,8 +24,16 @@ codons = ['TTT', 'TTC', 'TTA', 'TTG', 'TCT', 'TCC', 'TCA', 'TCG', 'TAT', 'TAC', 
           'AGC', 'AGA', 'AGG', 'GTT', 'GTC', 'GTA', 'GTG', 'GCT', 'GCC', 'GCA', 'GCG', 'GAT', 'GAC', 'GAA', 'GAG',
           'GGT', 'GGC', 'GGA', 'GGG', '___']
 
+codons_sorted = ["TTT", "TTC", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATT", "ATC", "ATA", "ATG", "GTT", "GTC",
+                 "GTA", "GTG", "TCT", "TCC", "TCA", "TCG", "AGT", "AGC", "CCT", "CCC", "CCA", "CCG", "ACT", "ACC", "ACA", "ACG",
+                 "GCT", "GCC", "GCA", "GCG", "TAT", "TAC", "CAT", "CAC", "CAA", "CAG", "AAT", "AAC",
+                 "AAA", "AAG", "GAT", "GAC", "GAA", "GAG", "TGT", "TGC", "TGG", "CGT", "CGC", "CGA", "CGG",
+                 "AGA", "AGG", "GGT", "GGC", "GGA", "GGG", "TAA", "TAG", "TGA"]
+
 codons_to_integer = dict((c, i) for i, c in enumerate(codons))
 integer_to_codons = dict((i, c) for i, c in enumerate(codons))
+codons_to_sorted_integer = dict((c, i) for i, c in enumerate(codons_sorted))
+integer_to_sorted_codons = dict((i, c) for i, c in enumerate(codons_sorted))
 
 
 def aa_int_to_onehot_tensor(tensor: Tensor) -> Tensor:
@@ -49,6 +57,12 @@ def codon_from_output(output: Tensor):
     top_n, top_i = output.topk(1)
     category_i = top_i[0].item()
     return codons[category_i], category_i
+
+
+def sort_codons(codons):
+    codon_names = [integer_to_codons[i] for i in codons]
+    sorted_integers = [codons_to_sorted_integer[c] for c in codon_names]
+    return sorted_integers
 
 
 def filter_sequence_length(df, min_length, max_length):
