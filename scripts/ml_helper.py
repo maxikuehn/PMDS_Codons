@@ -15,6 +15,30 @@ from torch.utils.data import Dataset
 amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*',
                '_']
 
+amino_acids_to_codons = {
+    'A': ['GCT', 'GCC', 'GCA', 'GCG'],
+    'R': ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+    'N': ['AAT', 'AAC'],
+    'D': ['GAT', 'GAC'],
+    'C': ['TGT', 'TGC'],
+    'Q': ['CAA', 'CAG'],
+    'E': ['GAA', 'GAG'],
+    'G': ['GGT', 'GGC', 'GGA', 'GGG'],
+    'H': ['CAT', 'CAC'],
+    'I': ['ATT', 'ATC', 'ATA'],
+    'L': ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+    'K': ['AAA', 'AAG'],
+    'M': ['ATG'],
+    'F': ['TTT', 'TTC'],
+    'P': ['CCT', 'CCC', 'CCA', 'CCG'],
+    'S': ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+    'T': ['ACT', 'ACC', 'ACA', 'ACG'],
+    'W': ['TGG'],
+    'Y': ['TAT', 'TAC'],
+    'V': ['GTT', 'GTC', 'GTA', 'GTG'],
+    '*': ['TAA', 'TAG', 'TGA']
+}
+
 aminoacids_to_integer = dict((a, i) for i, a in enumerate(amino_acids))
 integer_to_aminoacids = dict((i, a) for i, a in enumerate(amino_acids))
 
