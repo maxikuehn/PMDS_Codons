@@ -198,8 +198,8 @@ def plot_training(trainings_losses: list, trainings_accuracies: list) -> plt.Fig
     return plt
 
 
-def plot_confusion_matrix(labels: list, predicted: list, class_names: list, title: str, 
-                          cmap=plt.cm.Blues, normalize: str='true') -> plt.Figure:
+def plot_confusion_matrix(labels: list, predicted: list, class_names: list, title: str,
+                          cmap=plt.cm.Blues, normalize: str = 'true', sort_codons: bool = False) -> plt.Figure:
     """
     This function prints and plots the confusion matrix.
     ------
@@ -213,8 +213,9 @@ def plot_confusion_matrix(labels: list, predicted: list, class_names: list, titl
     returns: plot with the confusion matrix
     """
     # sort codons by amino acids
-    labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
-    class_names = ml_helper.codons_sorted
+    if sort_codons:
+        labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
+        class_names = ml_helper.codons_sorted
 
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
@@ -233,8 +234,9 @@ def plot_confusion_matrix(labels: list, predicted: list, class_names: list, titl
 
     return plt
 
-def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list, 
-                              title: str, cmap: str='coolwarm', normalize: str='true') -> plt.Figure:
+
+def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list,
+                              title: str, cmap: str = 'coolwarm', normalize: str = 'true', sort_codons: bool = False) -> plt.Figure:
     """
     This function prints and plots the confusion matrix.
     ------
@@ -248,8 +250,9 @@ def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list,
     returns: plot with the confusion matrix
     """
     # sort codons by amino acids
-    labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
-    class_names = ml_helper.codons_sorted
+    if sort_codons:
+        labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
+        class_names = ml_helper.codons_sorted
 
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
