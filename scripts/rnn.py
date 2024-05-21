@@ -74,6 +74,7 @@ def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer,
     for epoch in range(epochs):
         epoch_start_time = time.time()
         epoch_losses = list()
+
         for b, (input, label) in enumerate(data):
 
             hidden = model.init_hidden()
@@ -102,11 +103,13 @@ def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer,
             epoch_losses.append(loss.detach().item() / input.shape[1])
 
             if b % 200 == 0:
-                loss, current = loss.item(), b * input.shape[0] + len(input)
-                print(f"loss: {loss:>10f}  [{current:>5d}/{len(data.dataset):>5d}]  ({time.time() - start_time:>.2f}s)")
+                current = b * input.shape[0] + len(input)
+                print_loss = np.mean(epoch_losses)
+                print(f"loss: {print_loss:>7.4f}  [{current:>5d}/{len(data.dataset):>5d}]")
 
         train_losses[epoch] = torch.tensor(epoch_losses).mean()
-        print(f'=> epoch: {epoch + 1}, loss: {train_losses[epoch]}, total time: {time.time() - epoch_start_time:.2f}s')
+        print(f'=> epoch: {epoch + 1}/{epochs}, loss: {train_losses[epoch]:.4f}, epoch time: {time.time() - epoch_start_time:.2f}s')
+    print(f"=> Finished training in {time.time() - start_time:.2f}s")
 
 
 def predict(model: RNN, input, device=torch.device("cpu")):
