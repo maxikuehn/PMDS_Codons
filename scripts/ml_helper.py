@@ -220,17 +220,21 @@ def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str 
     print(f"Model saved as {timestamp}_{model_name}{appendix}.pt")
 
 
-def load_model(model_name: str, organism: str):
-    # get the newest version of the tcn model
+def load_model(model_name: str, organism: str, device=None, get_all: bool = False):
+    # get all models from organism
     organism_models = os.listdir(f"../ml_models/{organism}")
     # get all models from type
     models = [model for model in organism_models if model_name in model]
     # sort by date
     models.sort()
+
+    if get_all:
+        models = [{"name": model, "model": torch.load(f"../ml_models/{organism}/{model}", map_location=device)} for model in models]
+        print(f"Loaded {len(models)} models")
+        return models
+
     # get newest model
     newest_model = models[-1]
-    # load model
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = torch.load(f"../ml_models/{organism}/{newest_model}", map_location=device)
     print(f"Model loaded: {newest_model}")
     return model
