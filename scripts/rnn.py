@@ -26,7 +26,6 @@ class RNN(nn.Module):
         self.i2h = nn.Linear(input_size, hidden_size, bias=False)
         self.h2h = nn.Linear(hidden_size, hidden_size)
         self.h2o = nn.Linear(hidden_size, output_size)
-        # self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input, hidden_state) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -102,8 +101,8 @@ def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer,
 
             epoch_losses.append(loss.detach().item() / input.shape[1])
 
-            if b % 200 == 0:
-                current = b * input.shape[0] + len(input)
+            if b > 0 and b % 200 == 0:
+                current = b * input.shape[0]
                 print_loss = np.mean(epoch_losses)
                 print(f"loss: {print_loss:>7.4f}  [{current:>5d}/{len(data.dataset):>5d}]")
 
