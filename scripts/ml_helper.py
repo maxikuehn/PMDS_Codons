@@ -169,15 +169,6 @@ def pad_tensor(tensor: Tensor, max_length, padding_symbol, padding_pos):
     elif padding_pos == "right":
         return F.pad(tensor, (0, max_length - len(tensor)), value=padding_symbol)
 
-# def add_speed(aa_tensor_list, device):
-#     print(aa_tensor_list.shape)
-#     # for i, aa_tensor in enumerate(aa_tensor_list):
-#     #     speed_tensor = torch.tensor([get_average_aa_translation_speed(integer_to_aminoacids[aa_tensor.item()])]).to(device)
-#     #     print(speed_tensor.shape)
-#     #     print(aa_tensor.shape)
-#     #     new_tensor = torch.cat((aa_tensor, speed_tensor))
-#     #     aa_tensor_list[i] = new_tensor
-
 def add_speed_dimension(aa_tensor, device):
     aa_cpu = aa_tensor.cpu()
     speeds = torch.tensor(
@@ -186,15 +177,6 @@ def add_speed_dimension(aa_tensor, device):
     speeds = speeds.to(device)
     result_tensor = torch.cat((aa_tensor.unsqueeze(1), speeds.unsqueeze(1)), dim=1).to(device)
     return result_tensor
-
-# def add_speed_dimension(aa_tensor, device):
-#     new_tensors = []
-#     for aa in aa_tensor:
-#         speed_tensor = torch.tensor([aa_avg_translation_speeds[integer_to_aminoacids[aa.item()]]]).to(device)
-#         new_tensor = torch.cat((aa.unsqueeze(0), speed_tensor), dim=0).to(device)
-#         new_tensors.append(new_tensor)
-#     result_tensor = torch.stack(new_tensors, dim=0)
-#     return result_tensor
 
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
