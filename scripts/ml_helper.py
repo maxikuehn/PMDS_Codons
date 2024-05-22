@@ -11,6 +11,7 @@ from Bio.SeqRecord import SeqRecord
 from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import Dataset
+import numpy as np
 
 amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*',
                '_']
@@ -36,7 +37,8 @@ amino_acids_to_codons = {
     'W': ['TGG'],
     'Y': ['TAT', 'TAC'],
     'V': ['GTT', 'GTC', 'GTA', 'GTG'],
-    '*': ['TAA', 'TAG', 'TGA']
+    '*': ['TAA', 'TAG', 'TGA'],
+    '_': ['___']
 }
 
 aminoacids_to_integer = dict((a, i) for i, a in enumerate(amino_acids))
@@ -59,6 +61,32 @@ integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 codons_to_sorted_integer = dict((c, i) for i, c in enumerate(codons_sorted))
 integer_to_sorted_codons = dict((i, c) for i, c in enumerate(codons_sorted))
 
+translation_speeds = {
+    'TTT': 2.2, 'TTC': 2.0, 'TTA': 1.6, 'TTG': 1.5,
+    'TCT': 1.9, 'TCC': 2.1, 'TCA': 1.4, 'TCG': 1.6,
+    'TAT': 2.8, 'TAC': 2.3, 'TAA': 25, 'TAG': 27,
+    'TGT': 4.4, 'TGC': 2.0, 'TGA': 24, 'TGG': 2.4,
+    'CTT': 2.3, 'CTC': 2.1, 'CTA': 1.6, 'CTG': 1.0,
+    'CCT': 2.5, 'CCC': 3.3, 'CCA': 1.7, 'CCG': 1.5,
+    'CAT': 1.7, 'CAC': 1.0, 'CAA': 1.5, 'CAG': 1.0,
+    'CGT': 7.9, 'CGC': 1.7, 'CGA': 7.3, 'CGG': 4.1,
+    'ATT': 1.8, 'ATC': 1.6, 'ATA': 2.9, 'ATG': 1.0,
+    'ACT': 1.1, 'ACC': 1.2, 'ACA': 0.9, 'ACG': 0.8,
+    'AAT': 1.9, 'AAC': 1.4, 'AAA': 1.3, 'AAG': 1.2,
+    'AGT': 6.7, 'AGC': 1.4, 'AGA': 5.0, 'AGG': 9.2,
+    'GTT': 1.8, 'GTC': 1.8, 'GTA': 1.1, 'GTG': 1.3,
+    'GCT': 1.1, 'GCC': 1.0, 'GCA': 0.7, 'GCG': 0.7,
+    'GAT': 2.3, 'GAC': 1.5, 'GAA': 1.7, 'GAG': 2.0,
+    'GGT': 5.2, 'GGC': 1.7, 'GGA': 2.1, 'GGG': 2.0,
+    '___': -10
+}
+
+def get_average_aa_translation_speed(amino_acid):
+    codons = amino_acids_to_codons[amino_acid]
+    speeds = [translation_speeds[codon] for codon in codons]
+    return round(np.mean(np.array(speeds)), 2)
+
+aa_avg_translation_speeds = { aa:get_average_aa_translation_speed(aa) for aa in amino_acids }
 
 def aa_int_to_onehot_tensor(tensor: Tensor) -> Tensor:
     tensor = tensor.long()
@@ -141,6 +169,32 @@ def pad_tensor(tensor: Tensor, max_length, padding_symbol, padding_pos):
     elif padding_pos == "right":
         return F.pad(tensor, (0, max_length - len(tensor)), value=padding_symbol)
 
+# def add_speed(aa_tensor_list, device):
+#     print(aa_tensor_list.shape)
+#     # for i, aa_tensor in enumerate(aa_tensor_list):
+#     #     speed_tensor = torch.tensor([get_average_aa_translation_speed(integer_to_aminoacids[aa_tensor.item()])]).to(device)
+#     #     print(speed_tensor.shape)
+#     #     print(aa_tensor.shape)
+#     #     new_tensor = torch.cat((aa_tensor, speed_tensor))
+#     #     aa_tensor_list[i] = new_tensor
+
+def add_speed_dimension(aa_tensor, device):
+    aa_cpu = aa_tensor.cpu()
+    speeds = torch.tensor(
+        [aa_avg_translation_speeds[integer_to_aminoacids[aa.item()]] for aa in aa_cpu]
+    )
+    speeds = speeds.to(device)
+    result_tensor = torch.cat((aa_tensor.unsqueeze(1), speeds.unsqueeze(1)), dim=1).to(device)
+    return result_tensor
+
+# def add_speed_dimension(aa_tensor, device):
+#     new_tensors = []
+#     for aa in aa_tensor:
+#         speed_tensor = torch.tensor([aa_avg_translation_speeds[integer_to_aminoacids[aa.item()]]]).to(device)
+#         new_tensor = torch.cat((aa.unsqueeze(0), speed_tensor), dim=0).to(device)
+#         new_tensors.append(new_tensor)
+#     result_tensor = torch.stack(new_tensors, dim=0)
+#     return result_tensor
 
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 
@@ -149,14 +203,18 @@ class CodonDataset(Dataset):
     def __init__(self,
                  organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
                  split: Literal["train", "test"] = "train",
-                 min_length: int = None,
+                 min_length: int = None, 
                  max_length: int = None,
+                 add_speeds = False,
                  cut_data: bool = False,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
-                 data_path="../data",
-                 device=torch.device("cpu")):
+                 data_path: str = "../data",
+                 device = torch.device("cpu")):
+        self.device = device
+        padding_char = "_"
 
+        # Check for errors
         if organism not in organisms:
             raise ValueError(f"Organism '{organism}' is not in {organisms}")
         if cut_data and max_length == None:
@@ -172,6 +230,7 @@ class CodonDataset(Dataset):
         self.device = device
         self.padding_char = "_"
 
+        # Read dataframe
         df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
 
         if not cut_data:
@@ -184,13 +243,18 @@ class CodonDataset(Dataset):
         df["translation"] = df["translation"].apply(aa_to_int_tensor, device=device)
         df["sequence"] = df["sequence"].apply(codon_to_tensor, device=device)
 
+
         if cut_data:
             df = cut_sequences(df, max_length)
             df["translation"] = df["translation"].apply(pad_tensor, args=(max_length, aminoacids_to_integer['_'], padding_pos))
             df["sequence"] = df["sequence"].apply(pad_tensor, args=(max_length, codons_to_integer["___"], padding_pos))
 
+
         if one_hot_aa:
             df["translation"] = df["translation"].apply(aa_int_to_onehot_tensor)
+
+        if add_speeds:
+            df["translation"] = df["translation"].apply(add_speed_dimension, device=device)
 
         self.df = df
 
