@@ -42,6 +42,18 @@ recordsEColi = SeqIO.to_dict(SeqIO.parse("Codons\data\E.Coli\GCA_000005845.2\cds
 # recordsFly = SeqIO.to_dict(SeqIO.parse("data\Drosophila.Melanogaster\cds_from_genomic.fna", "fasta"))
 # recordsHuman= SeqIO.to_dict(SeqIO.parse("data\Homo.Sapiens\cds_from_genomic.fna", "fasta"))
 
+# Remove unwanted Symbols from Aminoacidsequences('X') or Codonsequences ('*' at last index)
+def removeUnwantedSymbols(sequences):
+    newList = []
+    for sequence in sequences:
+        if "X" in sequence:
+            continue
+        elif sequence[-1] == '*':
+            newList.append(sequence[:-2])
+        else:
+            newList.append(sequence)
+    return newList
+
 def printCleanRecord(record):
     cleanRecords = verifyData(records=record)
     print(cleanRecords['report'])
