@@ -288,7 +288,7 @@ def dict_aa_codon(codon=None, filter_codon=True, filter_value='___'):
         return codon_to_amino_acid[codon]
     
 
-def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
+def plot_codon_acc(labels, predicted, title='Accuracy für jedes Codon'):
     """
     This function plots the accuracy of each codon
     ------
@@ -302,16 +302,18 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     predicted_codon_names = codon_to_name(predicted)
 
     # calculate for each codon the accuaracy
-    codon_accuracy = {}
+    codon_correct = {}
 
     for i in range(len(labels_codon_names)):
-        if labels_codon_names[i] not in codon_accuracy:
-            codon_accuracy[predicted_codon_names[i]] = 0
+        if labels_codon_names[i] not in codon_correct:
+            codon_correct[labels_codon_names[i]] = 0
         if predicted_codon_names[i] == labels_codon_names[i]:
-            codon_accuracy[predicted_codon_names[i]] += 1
+            codon_correct[labels_codon_names[i]] += 1
 
-    for key in codon_accuracy:
-        codon_accuracy[key] = codon_accuracy[key] / len([c for c in labels_codon_names if c == key])
+    codon_accuracies = {}
+    print(codon_correct)
+    for key in codon_correct:
+        codon_accuracies[key] = codon_correct[key] / len([c for c in labels_codon_names if c == key])
 
 
     amino_acid_to_color = {
@@ -339,8 +341,8 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     }
 
     # Get the keys, values, and colors as lists
-    keys = list(codon_accuracy.keys())
-    values = list(codon_accuracy.values())
+    keys = list(codon_accuracies.keys())
+    values = list(codon_accuracies.values())
     colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
 
     # Sort the keys, values, and colors based on the colors
@@ -351,7 +353,7 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     plt.bar(keys, values, color=colors)
     plt.title(title, fontsize=20)
     #plt.xlabel('Codon')
-    plt.ylabel('Akkuranz', fontsize=15)
+    plt.ylabel('Accuracy', fontsize=15)
     # rotate the x axis labels
     #plt.xticks(rotation=90)
 
@@ -366,12 +368,12 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     plt.xticks(fontsize=15)
 
 
-    return plt
+    return plt, codon_accuracies
 
 
 
 
-def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy für jede Aminosäure'):
+def plot_avg_aa_acc(labels, predicted, title='Durchschnittliche Codon Accuracy für jede Aminosäure'):
     """
     This function plots the average accuracy of each amino acid
     ------
@@ -389,9 +391,9 @@ def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy f
 
     for i in range(len(labels_codon_names)):
         if labels_codon_names[i] not in codon_accuracy:
-            codon_accuracy[predicted_codon_names[i]] = 0
+            codon_accuracy[labels_codon_names[i]] = 0
         if predicted_codon_names[i] == labels_codon_names[i]:
-            codon_accuracy[predicted_codon_names[i]] += 1
+            codon_accuracy[labels_codon_names[i]] += 1
 
     for key in codon_accuracy:
         codon_accuracy[key] = codon_accuracy[key] / len([c for c in labels_codon_names if c == key])
@@ -420,7 +422,7 @@ def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy f
     #plt.xticks(rotation=90)
     return plt
 
-def codon_count(predicted):
+def codon_count(predicted, labels=None):
     """
     This function counts the number of times each codon is predicted for each amino acid
     ------
@@ -433,6 +435,10 @@ def codon_count(predicted):
     codon_counts = defaultdict(lambda: defaultdict(int))
 
     dict_codon = dict_aa_codon()
+    if labels is not None:
+        for codon in labels:
+            codon_counts[dict_codon[codon]][codon] = 0
+
     # Iterate over the predicted codons
     for codon in predicted_codon_names:
         # Get the amino acid that the codon codes for
@@ -507,6 +513,135 @@ def plot_codon_count(codon_counts, title='Anzahl Vorhersage für jedes Codon', f
     plt.title(title, fontsize=20)
     #plt.xlabel('Codon')
     plt.ylabel('Anzahl Vorhersage', fontsize=15)
+    # rotate the x axis labels
+    #plt.xticks(rotation=90)
+
+
+    # Create x-axis labels with corresponding colors
+    ax = plt.gca()
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(keys, rotation=90)
+    for i, tick in enumerate(ax.get_xticklabels()):
+        tick.set_color(colors[i])
+    # set size of tje x axis labels
+    plt.xticks(fontsize=15)
+    return plt, 
+
+
+def plot_relative_codon_count(codon_counts, predicted, title='Relativer Anteil der Vorhersagen für jedes Codon', flatten=True):
+    """
+    This function plots the relative number of each codon 
+    (model suggested codon usage bias)
+    ------
+    codon_counts: dictionary with the count of each codon
+    precited: predicted labels
+    title: title of the plot
+    flatten: if True, the dictionary is flattened, needed if the amino acids are also in the dictionary
+    """
+    if flatten:
+        codon_counts = flatten_dict(codon_counts)
+
+    predicted_codon_names = codon_to_name(predicted)
+
+    codon_to_aa = dict_aa_codon()
+    relative_codon_usage = {}
+    for codon in codon_counts:
+        relative_codon_usage[codon] = codon_counts[codon] / len([key for key in predicted_codon_names if codon_to_aa[key] == codon_to_aa[codon]])
+
+    #print(codon_counts)
+    # boxplot 
+    amino_acid_to_color = {
+        'A': '#e6194B',  # Red
+        'C': '#3cb44b',  # Green
+        'D': '#ffe119',  # Yellow
+        'E': '#4363d8',  # Blue
+        'F': '#f58231',  # Orange
+        'G': '#911eb4',  # Purple
+        'H': '#42d4f4',  # Cyan
+        'I': '#f032e6',  # Magenta
+        'K': '#bfef45',  # Lime
+        'L': '#fabed4',  # Pink
+        'M': '#469990',  # Teal
+        'N': '#dcbeff',  # Lavender
+        'P': '#9A6324',  # Brown
+        'Q': '#68b300',  # lindgreen
+        'R': '#800000',  # Maroon
+        'S': '#aaffc3',  # Mint
+        'T': '#808000',  # Olive
+        'V': '#ffd8b1',  # Apricot
+        'W': '#000075',  # Navy
+        'Y': '#a9a9a9',  # Grey
+        '*': '#000000'   # Black for stop codon
+    }
+
+    # Get the keys, values, and colors as lists
+    keys = list(relative_codon_usage.keys())
+    values = list(relative_codon_usage.values())
+    colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
+
+    # Sort the keys, values, and colors based on the colors
+    keys, values, colors = zip(*sorted(zip(keys, values, colors), key=lambda x: x[2]))
+
+    # plot the accuracy of each codon
+    plt.figure(figsize=(20, 5))
+    plt.bar(keys, values, color=colors)
+    plt.title(title, fontsize=20)
+    #plt.xlabel('Codon')
+    plt.ylabel('Relativer Anteil der Vorhersagen', fontsize=15)
+    # rotate the x axis labels
+    #plt.xticks(rotation=90)
+
+
+    # Create x-axis labels with corresponding colors
+    ax = plt.gca()
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(keys, rotation=90)
+    for i, tick in enumerate(ax.get_xticklabels()):
+        tick.set_color(colors[i])
+    # set size of tje x axis labels
+    plt.xticks(fontsize=15)
+    return plt
+
+
+def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
+    amino_acid_to_color = {
+        'A': '#e6194B',  # Red
+        'C': '#3cb44b',  # Green
+        'D': '#ffe119',  # Yellow
+        'E': '#4363d8',  # Blue
+        'F': '#f58231',  # Orange
+        'G': '#911eb4',  # Purple
+        'H': '#42d4f4',  # Cyan
+        'I': '#f032e6',  # Magenta
+        'K': '#bfef45',  # Lime
+        'L': '#fabed4',  # Pink
+        'M': '#469990',  # Teal
+        'N': '#dcbeff',  # Lavender
+        'P': '#9A6324',  # Brown
+        'Q': '#68b300',  # lindgreen
+        'R': '#800000',  # Maroon
+        'S': '#aaffc3',  # Mint
+        'T': '#808000',  # Olive
+        'V': '#ffd8b1',  # Apricot
+        'W': '#000075',  # Navy
+        'Y': '#a9a9a9',  # Grey
+        '*': '#000000'   # Black for stop codon
+    }
+
+    # Get the keys, values, and colors as lists
+    keys = list(cub_dict.keys())
+    values = list(cub_dict.values())
+    colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
+
+    # Sort the keys, values, and colors based on the colors
+    keys, values, colors = zip(*sorted(zip(keys, values, colors), key=lambda x: x[2]))
+
+    # plot the accuracy of each codon
+    plt.figure(figsize=(20, 5))
+    plt.bar(keys, values, color=colors)
+    plt.title(title, fontsize=20)
+    #plt.xlabel('Codon')
+    plt.ylabel('Relativer Anteil', fontsize=15)
     # rotate the x axis labels
     #plt.xticks(rotation=90)
 
