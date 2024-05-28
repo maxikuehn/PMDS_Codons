@@ -191,7 +191,7 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 class CodonDataset(Dataset):
     def __init__(self,
                  organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
-                 split: Literal["train", "test"] = "train",
+                 split: Literal["train", "test", "valid"] = "train",
                  min_length: int = None, 
                  max_length: int = None,
                  add_speeds = False,
