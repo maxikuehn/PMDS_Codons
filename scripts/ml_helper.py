@@ -200,9 +200,7 @@ class CodonDataset(Dataset):
                  one_hot_aa: bool = True,
                  filter_x: bool = False,
                  data_path: str = "../data",
-                 device = torch.device("cpu")):
-        self.device = device
-        padding_char = "_"
+                 device=torch.device("cpu")):
 
         # Check for errors
         if organism not in organisms:
