@@ -12,34 +12,87 @@ from mpl_toolkits.mplot3d import Axes3D
 
 """
 This scritpt contains functions to evaluate the model and plot the results
+use flatten_for_plotting() to prepare the data for plotting:
 
+#Example1: 
+
+pred_codons = [[1, 2, 3], [4, 5, 6]]
+label_codons = [[1, 2, 3], [64, 64, 60]]
+pred_codons, label_codons = ml_evaluation.flatten_for_plotting(pred_codons, label_codons, name_codon=True, filter_pads=True, padding_value=64)
+print(pred_codons, label_codons)
+
+#Example 2: 
+
+pred_codons = [['TTT', 'TTC', 'TTA', 'TTG'], ['TCT', 'TCC', 'TCA', 'TCG']]
+label_codons = [['TTT', 'TTC', 'TTA', 'TTG'], ['TCT', 'TCC', 'TCA', 'TCG']]
+pred_codons, label_codons = ml_evaluation.flatten_for_plotting(pred_codons, label_codons, name_codon=False)
+print(pred_codons, label_codons)
 """
 
-def filter_codons(codons, filter_value=64):
+def filter_codons(codons: list, filter_value: int=64) -> list:
     return [c for c in codons if c != filter_value]
 
-def filter_padding(predicted, labels, filter_value=64):
+def filter_padding(predicted: list, labels: list, filter_value: int=64) -> list:
     # remove pairs where label is filter_value
     return zip(*[(pred, label) for pred, label in zip(predicted, labels) if label != filter_value])
 
-def codon_to_name(codon_list):
+
+def codon_to_name(codon_list: list) -> list:
     # translate codons to names
     return [ml_helper.codons[int(c)] for c in codon_list]
 
-def translate_codons(codon_names):
+def translate_codons(codon_names: list) -> list:
     # translate the codons to amino acids
     return [str(Seq(c).translate()) for c in codon_names]
 
 
-def print_unique_elements(list1, list2):
-    uniq_list1 = set(list1)
-    uniq_list2 = set(list2)
-
+def print_unique_elements(pred_codons: list, true_codons: list) -> None:
+    # get unique elements of the lists
+    uniq_list1 = set(pred_codons)
+    uniq_list2 = set(true_codons)
     print("predicted different amino acids: ",len(uniq_list1), "out of:", len(uniq_list2))
     if len(uniq_list1) != len(uniq_list2):
         print("predicted following amino acids: ",uniq_list1)
 
-def flatten_dict(dict_d):
+
+def flatten_for_plotting(predicted: list, labels: list, 
+                         name_codon: bool = False, filter_pads=True, padding_value=64) -> list:
+    """
+    This function flattens the lists
+    ------
+    predicted: predicted labels
+    labels: true labels
+    name_codon: if True, the codons integers are translated to codon name strings
+    filter_pads: if True, the padding value is filtered out
+    padding_value: value to filter out
+    ------
+    returns: flattened lists
+    """
+    # flatten the lists
+    predicted = [item for sublist in predicted for item in sublist]
+    labels = [item for sublist in labels for item in sublist]
+    if filter_pads:
+        predicted, labels = filter_padding(predicted, labels, padding_value)
+        # back to list
+        predicted = list(predicted)
+        labels = list(labels)
+    if name_codon:
+        predicted = codon_to_name(predicted)
+        labels = codon_to_name(labels)
+    return predicted, labels
+
+
+
+
+def flatten_dict(dict_d: dict) -> dict:
+    """
+    This function flattens a dictionary
+    ------
+    dict_d: dictionary to flatten (dict_example {'A': {'ACT': 1/4, 'ACC': 1/4, 'ACA': 1/4, 'ACG': 1/4}, ...})
+    ------
+    returns: flattened dictionary (dict_example {'ACT': 1/4, 'ACC': 1/4, 'ACA': 1/4, 'ACG': 1/4, ...})
+    """
+    # filter out codons so that amino acids are not in the dict anymore
     falttend_dict = {}
     # get codon out of dict
     for amino, codon_dict in dict_d.items():
@@ -118,7 +171,15 @@ def evaluate_model(model, device, test_loader: DataLoader) -> list:
 
 
 
-def plot_training(trainings_losses, trainings_accuracies, title='Training Loss and Accuracy'):
+def plot_training(trainings_losses: list, trainings_accuracies: list) -> plt.Figure:
+    """
+    This function plots the training loss and accuracy
+    ------
+    trainings_losses: list with the training losses (1d list)
+    trainings_accuracies: list with the training accuracies (1d list)
+    ------
+    returns: plot with the training loss and accuracy
+    """
     plt.figure(figsize=(15, 5))
     #plt.suptitle(title, fontsize=20)
 
@@ -137,10 +198,25 @@ def plot_training(trainings_losses, trainings_accuracies, title='Training Loss a
     return plt
 
 
-def plot_confusion_matrix(labels, predicted, classes, title, cmap=plt.cm.Blues, normalize='true'):
+def plot_confusion_matrix(labels: list, predicted: list, class_names: list, title: str,
+                          cmap=plt.cm.Blues, normalize: str = 'true', sort_codons: bool = False) -> plt.Figure:
     """
     This function prints and plots the confusion matrix.
+    ------
+    labels: true labels (1d list over all samples)
+    predicted: predicted labels (1d list over all samples)
+    class_names: list with the class names
+    title: title of the plot
+    cmap: color map of the plot
+    normalize: normalize the confusion matrix (else absolute values are shown)
+    ------
+    returns: plot with the confusion matrix
     """
+    # sort codons by amino acids
+    if sort_codons:
+        labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
+        class_names = ml_helper.codons_sorted
+
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
 
@@ -148,9 +224,9 @@ def plot_confusion_matrix(labels, predicted, classes, title, cmap=plt.cm.Blues, 
     plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
     plt.title(title, fontsize=20)
     plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
+    tick_marks = np.arange(len(class_names))
+    plt.xticks(tick_marks, class_names, rotation=45)
+    plt.yticks(tick_marks, class_names)
 
     plt.xlabel('Vorhersage', fontsize=15)
     plt.ylabel('Richtige Kategorie', fontsize=15)
@@ -158,7 +234,26 @@ def plot_confusion_matrix(labels, predicted, classes, title, cmap=plt.cm.Blues, 
 
     return plt
 
-def plot_confusion_matrix_sns(labels, predicted, classes, title, cmap='coolwarm', normalize='true'):
+
+def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list,
+                              title: str, cmap: str = 'coolwarm', normalize: str = 'true', sort_codons: bool = False) -> plt.Figure:
+    """
+    This function prints and plots the confusion matrix.
+    ------
+    labels: true labels (1d list over all samples)
+    predicted: predicted labels (1d list over all samples)
+    class_names: list with the class names
+    title: title of the plot
+    cmap: color map of the plot
+    normalize: normalize the confusion matrix (else absolute values are shown)
+    ------
+    returns: plot with the confusion matrix
+    """
+    # sort codons by amino acids
+    if sort_codons:
+        labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
+        class_names = ml_helper.codons_sorted
+
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
 
@@ -166,13 +261,22 @@ def plot_confusion_matrix_sns(labels, predicted, classes, title, cmap='coolwarm'
     # Plot the confusion matrix
     plt.figure(figsize=(15,10))
     sns.heatmap(conf_matrix, annot=mask, cmap=cmap, fmt='.2f',
-                xticklabels=classes, yticklabels=classes)
+                xticklabels=class_names, yticklabels=class_names)
     plt.title(title, fontsize=20)
     plt.xlabel('Vorhersage', fontsize=15)
     plt.ylabel('Richtige Kategorie', fontsize=15)
     return plt
 
 def dict_aa_codon(codon=None, filter_codon=True, filter_value='___'):
+    """
+    This function returns a dictionary that maps each codon to its corresponding amino acid
+    ------
+    codon: codon to get the corresponding amino acid
+    filter_codon: if True, the filter_value is not in the dictionary
+    filter_value: value to filter out
+    ------
+    returns: dictionary that maps each codon to its corresponding amino acid
+    """
     all_codons = ml_helper.codons
     if filter_codon:
         all_codons = [c for c in all_codons if c != filter_value]
@@ -184,21 +288,32 @@ def dict_aa_codon(codon=None, filter_codon=True, filter_value='___'):
         return codon_to_amino_acid[codon]
     
 
-def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
+def plot_codon_acc(labels, predicted, title='Accuracy für jedes Codon'):
+    """
+    This function plots the accuracy of each codon
+    ------
+    labels: true labels
+    predicted: predicted labels
+    title: title of the plot
+    ------
+    returns: plot with the accuracy of each codon
+    """
     labels_codon_names = codon_to_name(labels)
     predicted_codon_names = codon_to_name(predicted)
 
     # calculate for each codon the accuaracy
-    codon_accuracy = {}
+    codon_correct = {}
 
     for i in range(len(labels_codon_names)):
-        if labels_codon_names[i] not in codon_accuracy:
-            codon_accuracy[predicted_codon_names[i]] = 0
+        if labels_codon_names[i] not in codon_correct:
+            codon_correct[labels_codon_names[i]] = 0
         if predicted_codon_names[i] == labels_codon_names[i]:
-            codon_accuracy[predicted_codon_names[i]] += 1
+            codon_correct[labels_codon_names[i]] += 1
 
-    for key in codon_accuracy:
-        codon_accuracy[key] = codon_accuracy[key] / len([c for c in labels_codon_names if c == key])
+    codon_accuracies = {}
+    print(codon_correct)
+    for key in codon_correct:
+        codon_accuracies[key] = codon_correct[key] / len([c for c in labels_codon_names if c == key])
 
 
     amino_acid_to_color = {
@@ -226,8 +341,8 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     }
 
     # Get the keys, values, and colors as lists
-    keys = list(codon_accuracy.keys())
-    values = list(codon_accuracy.values())
+    keys = list(codon_accuracies.keys())
+    values = list(codon_accuracies.values())
     colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
 
     # Sort the keys, values, and colors based on the colors
@@ -238,7 +353,7 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     plt.bar(keys, values, color=colors)
     plt.title(title, fontsize=20)
     #plt.xlabel('Codon')
-    plt.ylabel('Akkuranz', fontsize=15)
+    plt.ylabel('Accuracy', fontsize=15)
     # rotate the x axis labels
     #plt.xticks(rotation=90)
 
@@ -253,12 +368,21 @@ def plot_codon_acc(labels, predicted, title='Akkuranz für jedes Codon'):
     plt.xticks(fontsize=15)
 
 
-    return plt
+    return plt, codon_accuracies
 
 
 
 
-def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy für jede Aminosäure'):
+def plot_avg_aa_acc(labels, predicted, title='Durchschnittliche Codon Accuracy für jede Aminosäure'):
+    """
+    This function plots the average accuracy of each amino acid
+    ------
+    labels: true labels
+    predicted: predicted labels
+    title: title of the plot
+    ------
+    returns: plot with the average accuracy of each amino acid
+    """
     labels_codon_names = codon_to_name(labels)
     predicted_codon_names = codon_to_name(predicted)
 
@@ -267,9 +391,9 @@ def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy f
 
     for i in range(len(labels_codon_names)):
         if labels_codon_names[i] not in codon_accuracy:
-            codon_accuracy[predicted_codon_names[i]] = 0
+            codon_accuracy[labels_codon_names[i]] = 0
         if predicted_codon_names[i] == labels_codon_names[i]:
-            codon_accuracy[predicted_codon_names[i]] += 1
+            codon_accuracy[labels_codon_names[i]] += 1
 
     for key in codon_accuracy:
         codon_accuracy[key] = codon_accuracy[key] / len([c for c in labels_codon_names if c == key])
@@ -298,18 +422,23 @@ def plot_avg_aa_acc(labels, predicted, title='Druchschnittliche Codon Accuracy f
     #plt.xticks(rotation=90)
     return plt
 
-
-
-
-
-
-
-def codon_count(predicted):
+def codon_count(predicted, labels=None):
+    """
+    This function counts the number of times each codon is predicted for each amino acid
+    ------
+    predicted: predicted labels
+    ------
+    returns: dictionary with the count of each codon
+    """
     predicted_codon_names = codon_to_name(predicted)
     # Initialize a dictionary to count the number of times each codon is predicted for each amino acid
     codon_counts = defaultdict(lambda: defaultdict(int))
 
     dict_codon = dict_aa_codon()
+    if labels is not None:
+        for codon in labels:
+            codon_counts[dict_codon[codon]][codon] = 0
+
     # Iterate over the predicted codons
     for codon in predicted_codon_names:
         # Get the amino acid that the codon codes for
@@ -396,39 +525,133 @@ def plot_codon_count(codon_counts, title='Anzahl Vorhersage für jedes Codon', f
         tick.set_color(colors[i])
     # set size of tje x axis labels
     plt.xticks(fontsize=15)
+    return plt, 
+
+
+def plot_relative_codon_count(codon_counts, predicted, title='Relativer Anteil der Vorhersagen für jedes Codon', flatten=True):
+    """
+    This function plots the relative number of each codon 
+    (model suggested codon usage bias)
+    ------
+    codon_counts: dictionary with the count of each codon
+    precited: predicted labels
+    title: title of the plot
+    flatten: if True, the dictionary is flattened, needed if the amino acids are also in the dictionary
+    """
+    if flatten:
+        codon_counts = flatten_dict(codon_counts)
+
+    predicted_codon_names = codon_to_name(predicted)
+
+    codon_to_aa = dict_aa_codon()
+    relative_codon_usage = {}
+    for codon in codon_counts:
+        relative_codon_usage[codon] = codon_counts[codon] / len([key for key in predicted_codon_names if codon_to_aa[key] == codon_to_aa[codon]])
+
+    #print(codon_counts)
+    # boxplot 
+    amino_acid_to_color = {
+        'A': '#e6194B',  # Red
+        'C': '#3cb44b',  # Green
+        'D': '#ffe119',  # Yellow
+        'E': '#4363d8',  # Blue
+        'F': '#f58231',  # Orange
+        'G': '#911eb4',  # Purple
+        'H': '#42d4f4',  # Cyan
+        'I': '#f032e6',  # Magenta
+        'K': '#bfef45',  # Lime
+        'L': '#fabed4',  # Pink
+        'M': '#469990',  # Teal
+        'N': '#dcbeff',  # Lavender
+        'P': '#9A6324',  # Brown
+        'Q': '#68b300',  # lindgreen
+        'R': '#800000',  # Maroon
+        'S': '#aaffc3',  # Mint
+        'T': '#808000',  # Olive
+        'V': '#ffd8b1',  # Apricot
+        'W': '#000075',  # Navy
+        'Y': '#a9a9a9',  # Grey
+        '*': '#000000'   # Black for stop codon
+    }
+
+    # Get the keys, values, and colors as lists
+    keys = list(relative_codon_usage.keys())
+    values = list(relative_codon_usage.values())
+    colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
+
+    # Sort the keys, values, and colors based on the colors
+    keys, values, colors = zip(*sorted(zip(keys, values, colors), key=lambda x: x[2]))
+
+    # plot the accuracy of each codon
+    plt.figure(figsize=(20, 5))
+    plt.bar(keys, values, color=colors)
+    plt.title(title, fontsize=20)
+    #plt.xlabel('Codon')
+    plt.ylabel('Relativer Anteil der Vorhersagen', fontsize=15)
+    # rotate the x axis labels
+    #plt.xticks(rotation=90)
+
+
+    # Create x-axis labels with corresponding colors
+    ax = plt.gca()
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(keys, rotation=90)
+    for i, tick in enumerate(ax.get_xticklabels()):
+        tick.set_color(colors[i])
+    # set size of tje x axis labels
+    plt.xticks(fontsize=15)
     return plt
 
 
+def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
+    amino_acid_to_color = {
+        'A': '#e6194B',  # Red
+        'C': '#3cb44b',  # Green
+        'D': '#ffe119',  # Yellow
+        'E': '#4363d8',  # Blue
+        'F': '#f58231',  # Orange
+        'G': '#911eb4',  # Purple
+        'H': '#42d4f4',  # Cyan
+        'I': '#f032e6',  # Magenta
+        'K': '#bfef45',  # Lime
+        'L': '#fabed4',  # Pink
+        'M': '#469990',  # Teal
+        'N': '#dcbeff',  # Lavender
+        'P': '#9A6324',  # Brown
+        'Q': '#68b300',  # lindgreen
+        'R': '#800000',  # Maroon
+        'S': '#aaffc3',  # Mint
+        'T': '#808000',  # Olive
+        'V': '#ffd8b1',  # Apricot
+        'W': '#000075',  # Navy
+        'Y': '#a9a9a9',  # Grey
+        '*': '#000000'   # Black for stop codon
+    }
 
-def plot_codon_count_3d(codon_counts):
-    dict_codon = dict_aa_codon()
+    # Get the keys, values, and colors as lists
+    keys = list(cub_dict.keys())
+    values = list(cub_dict.values())
+    colors = [amino_acid_to_color[dict_aa_codon(key)] for key in keys]
 
-    #for amino_acid in codon_counts.keys():
-    #    if amino_acid not in dict_codon:
-    #        dict_codon[amino_acid] = 'b'
+    # Sort the keys, values, and colors based on the colors
+    keys, values, colors = zip(*sorted(zip(keys, values, colors), key=lambda x: x[2]))
 
-    fig = plt.figure(figsize=(20, 10))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Iterate over the amino acids
-    for i, (amino_acid, counts) in enumerate(codon_counts.items()):
-        # Get the codons and counts
-        codons = list(counts.keys())
-        count_values = list(counts.values())
-        
-        # Create a list of the x, y, and z coordinates
-        x = [i] * len(codons)
-        y = list(range(len(codons)))
-        z = [0] * len(codons)
-        
-        # Create a bar for each codon
-        if amino_acid in dict_codon:  # Check if the amino acid is in dict_codon
-            ax.bar3d(x, y, z, 1, 1, count_values, color=dict_codon[amino_acid])
+    # plot the accuracy of each codon
+    plt.figure(figsize=(20, 5))
+    plt.bar(keys, values, color=colors)
+    plt.title(title, fontsize=20)
+    #plt.xlabel('Codon')
+    plt.ylabel('Relativer Anteil', fontsize=15)
+    # rotate the x axis labels
+    #plt.xticks(rotation=90)
 
 
-    # Set the x, y, and z labels
-    ax.set_xlabel('Amino Acid')
-    ax.set_ylabel('Codon')
-    ax.set_zlabel('Count')
-
+    # Create x-axis labels with corresponding colors
+    ax = plt.gca()
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(keys, rotation=90)
+    for i, tick in enumerate(ax.get_xticklabels()):
+        tick.set_color(colors[i])
+    # set size of tje x axis labels
+    plt.xticks(fontsize=15)
     return plt
