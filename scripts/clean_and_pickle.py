@@ -22,14 +22,15 @@ for index,record in enumerate(SeqIO.parse("C:/Users/nilsr/Documents/HS-Mannheim/
         continue
     else:
         raw.loc[index] = {'id':record.id,'description':record.description,'sequence':record.seq,'translation':record.translate(),'seguid':CheckSum.seguid(record.seq)}
-print("after first")
 
 for index,row in raw.iterrows():
     if "X" in row['translation']:
         raw.drop(index=index,inplace=True)
     elif "*" == row['translation'][-1]:
         raw.loc[index,'translation'] = raw.loc[index,'translation'][:-1]
-    print(index)
+        raw.loc[index,'sequence'] = raw.loc[index,'sequence'][:-3]
+        assert len(raw.loc[index,'sequence']) / 3 == len(raw.loc[index,'translation'])        
+        
 before_dupe_drop = raw.shape[0]
 raw.drop_duplicates(subset=['seguid'],inplace=True)
 after_dupe_drop = raw.shape[0]
