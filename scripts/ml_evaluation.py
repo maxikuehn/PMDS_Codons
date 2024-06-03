@@ -546,7 +546,8 @@ def plot_relative_codon_count(codon_counts, predicted, title='Relativer Anteil d
     codon_to_aa = dict_aa_codon()
     relative_codon_usage = {}
     for codon in codon_counts:
-        relative_codon_usage[codon] = codon_counts[codon] / len([key for key in predicted_codon_names if codon_to_aa[key] == codon_to_aa[codon]])
+        if len([key for key in predicted_codon_names if codon_to_aa[key] == codon_to_aa[codon]]) > 0:
+            relative_codon_usage[codon] = codon_counts[codon] / len([key for key in predicted_codon_names if codon_to_aa[key] == codon_to_aa[codon]])
 
     #print(codon_counts)
     # boxplot 
