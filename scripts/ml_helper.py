@@ -56,6 +56,12 @@ codons_sorted = ["TTT", "TTC", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATT", 
                  "AAA", "AAG", "GAT", "GAC", "GAA", "GAG", "TGT", "TGC", "TGG", "CGT", "CGC", "CGA", "CGG",
                  "AGA", "AGG", "GGT", "GGC", "GGA", "GGG", "TAA", "TAG", "TGA"]
 
+codons_sorted_no_stop = ["TTT", "TTC", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATT", "ATC", "ATA", "ATG", "GTT", "GTC",
+                         "GTA", "GTG", "TCT", "TCC", "TCA", "TCG", "AGT", "AGC", "CCT", "CCC", "CCA", "CCG", "ACT", "ACC", "ACA", "ACG",
+                         "GCT", "GCC", "GCA", "GCG", "TAT", "TAC", "CAT", "CAC", "CAA", "CAG", "AAT", "AAC",
+                         "AAA", "AAG", "GAT", "GAC", "GAA", "GAG", "TGT", "TGC", "TGG", "CGT", "CGC", "CGA", "CGG",
+                         "AGA", "AGG", "GGT", "GGC", "GGA", "GGG"]
+
 codons_to_integer = dict((c, i) for i, c in enumerate(codons))
 integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 codons_to_sorted_integer = dict((c, i) for i, c in enumerate(codons_sorted))

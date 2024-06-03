@@ -215,7 +215,7 @@ def plot_confusion_matrix(labels: list, predicted: list, class_names: list, titl
     # sort codons by amino acids
     if sort_codons:
         labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
-        class_names = ml_helper.codons_sorted
+        class_names = ml_helper.codons_sorted_no_stop
 
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
@@ -252,7 +252,7 @@ def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list,
     # sort codons by amino acids
     if sort_codons:
         labels, predicted = ml_helper.sort_codons(labels), ml_helper.sort_codons(predicted)
-        class_names = ml_helper.codons_sorted
+        class_names = ml_helper.codons_sorted_no_stop
 
     # Calculate confusion matrix
     conf_matrix = confusion_matrix(labels, predicted, normalize=normalize)
