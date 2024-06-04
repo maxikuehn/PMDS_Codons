@@ -9,6 +9,8 @@ from Bio.Seq import Seq
 from collections import defaultdict
 import ml_helper
 from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
+import Baseline_classifiers as bc
 
 """
 This scritpt contains functions to evaluate the model and plot the results
@@ -605,6 +607,10 @@ def plot_relative_codon_count(codon_counts, predicted, title='Relativer Anteil d
 
 
 def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
+    """
+    This function plots the Codon Usage Bias in a similar way
+    as the plot_relative_codon_count function to compare the two
+    """
     amino_acid_to_color = {
         'A': '#e6194B',  # Red
         'C': '#3cb44b',  # Green
@@ -656,3 +662,110 @@ def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
     # set size of tje x axis labels
     plt.xticks(fontsize=15)
     return plt
+
+
+def group_codons(sequence):
+        return [''.join(sequence[i:i+3]) for i in range(0, len(sequence), 3)]
+
+
+def max_cub_predictions(organism):
+    '''
+    This function returns the max cub predictions for the given organism
+    as list of lists (codons for each df row)
+    '''
+    df = pd.read_pickle(f"../data/{organism}/cleanedData_test.pkl")
+    usage_biases = pd.read_pickle(f"../data/{organism}/usageBias.pkl")
+    df['codons'] = df['sequence'].apply(group_codons)
+
+    max_weighted_bc = bc.Max_Bias_Baseline_Classifier(usage_biases)
+    amino_seq = df['translation'].apply(lambda seq: list(seq))
+    pred_codons_bc = max_weighted_bc.predict_codons(amino_seq)
+    return pred_codons_bc
+
+
+def create_pn_dict(predicted_m, labels, organism):
+    '''
+    This function creates a dictionary of the following form:
+    {
+        'ATG': {
+            "num": 0,    # number of occurences in the labels
+            "P_M==B": 0, # correct model prediction, where model is baseline
+            "P_M!=B": 0, # correct model prediction, where model is not baseline
+            "N_M==B": 0, # false model prediction, where model is baseline
+            "N_M!=B": 0  # false model prediction, where model is not baseline
+        }, ...
+    }
+    -----------
+    predicted_m: predicted codons als string as one list (all rows concatenated)
+    labels: true codons as string as one list (all rows concatenated)
+    organism: organism to evaluate (important for baseline classifier)
+    '''
+    pred_codons_bc = max_cub_predictions(organism)
+    predicted_bc = np.array(pred_codons_bc[pred_codons_bc != ''])
+    predicted_m = np.array(predicted_m)
+    labels = np.array(labels)
+
+    pn_dict = {}
+    for codon in ml_helper.codons_sorted:
+        pn_dict[codon] = {
+            "num": (labels == codon).sum(),
+            "P_M==B": 0, # positive, where model is baseline
+            "P_M!=B": 0, # positive, where model is not baseline
+            "N_M==B": 0, # negative, where model is baseline
+            "N_M!=B": 0  # negative, where model is not baseline
+        }
+
+    for i, codon_l in enumerate(labels):
+        if codon_l == predicted_m[i]:
+            if predicted_m[i] == predicted_bc[i]:
+                pn_dict[codon_l]["P_M==B"] += 1 / pn_dict[codon_l]["num"]
+            else:
+                pn_dict[codon_l]["P_M!=B"] += 1 / pn_dict[codon_l]["num"]
+        else:
+            if predicted_m[i] == predicted_bc[i]:
+                pn_dict[codon_l]["N_M==B"] += 1 / pn_dict[codon_l]["num"]
+            else:
+                pn_dict[codon_l]["N_M!=B"] += 1 / pn_dict[codon_l]["num"]
+    
+    return pn_dict
+
+
+def plot_pn_dict(pn_dict, model_name, organism_name):
+    '''
+    This function plots the dictionary 
+    -----------
+    pn_dict: result of create_pn_dict function
+    model_name: name of the model (e.g. 'Transformer')
+    organism: organism name (e.g. 'Mensch')
+    '''
+    # Extract data for plotting
+    labels = list(pn_dict.keys())
+    P_M_equal_B = [pn_dict[label]['P_M==B'] for label in labels]
+    P_M_not_equal_B = [pn_dict[label]['P_M!=B'] for label in labels]
+    N_M_equal_B = [pn_dict[label]['N_M==B'] for label in labels]
+    N_M_not_equal_B = [pn_dict[label]['N_M!=B'] for label in labels]
+
+    # Plotting the stacked bar chart
+    plt.figure(figsize=(12, 4))
+
+    # Define the positions of the bars
+    r = np.arange(len(labels))
+
+    # Plot each segment of the bar
+    plt.bar(r, P_M_equal_B, color='darkgreen', edgecolor='grey', label='P_M==B')
+    plt.bar(r, P_M_not_equal_B, bottom=P_M_equal_B, color='limegreen', edgecolor='grey', label='P_M!=B')
+    plt.bar(r, N_M_equal_B, bottom=np.array(P_M_equal_B) + np.array(P_M_not_equal_B), color='darkred', edgecolor='grey', label='N_M==B')
+    plt.bar(r, N_M_not_equal_B, bottom=np.array(P_M_equal_B) + np.array(P_M_not_equal_B) + np.array(N_M_equal_B), color='lightcoral', edgecolor='grey', label='N_M!=B')
+
+    # Add labels
+    plt.xlabel('Codons', fontweight='bold')
+    plt.ylabel('Relativer Anteil', fontweight='bold')
+    plt.xticks(r, labels, rotation=45)
+    plt.title(f'Anteile von korrekten (P) und falschen (N) Vorhersagen\ndes {model_name} Modells (M) im Vergleich zur Max CUB Baseline (B) beim Organismus {organism_name}')
+
+    # Add a legend
+    plt.legend()
+
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
