@@ -1,6 +1,9 @@
 *.local
 .DS_Store
 
+rnn_nohup.out
+rnn_nohup.err
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

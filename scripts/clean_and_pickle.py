@@ -10,7 +10,7 @@ reportData = {
         'noStartCodon':0,
         #'oldLength': len(records)
         }
-for index,record in enumerate(SeqIO.parse("Codons\data\Drosophila.Melanogaster\cds_from_genomic.fna", "fasta")):
+for index,record in enumerate(SeqIO.parse("C:/Users/nilsr/Documents/HS-Mannheim/IM1/PMDS/Codons/data/Homo.Sapiens/cds_from_genomic.fna", "fasta")):
     if not len(record.seq)% 3 == 0:
         reportData['modThree']+=1
         continue
@@ -23,19 +23,18 @@ for index,record in enumerate(SeqIO.parse("Codons\data\Drosophila.Melanogaster\c
     else:
         raw.loc[index] = {'id':record.id,'description':record.description,'sequence':record.seq,'translation':record.translate(),'seguid':CheckSum.seguid(record.seq)}
 
+for index,row in raw.iterrows():
+    if "X" in row['translation']:
+        raw.drop(index=index,inplace=True)
+    elif "*" == row['translation'][-1]:
+        raw.loc[index,'translation'] = raw.loc[index,'translation'][:-1]
+        raw.loc[index,'sequence'] = raw.loc[index,'sequence'][:-3]
+        assert len(raw.loc[index,'sequence']) / 3 == len(raw.loc[index,'translation'])        
+        
 before_dupe_drop = raw.shape[0]
 raw.drop_duplicates(subset=['seguid'],inplace=True)
 after_dupe_drop = raw.shape[0]
 reportData['doubleData'] = before_dupe_drop - after_dupe_drop
 reportDataDf = pd.DataFrame(reportData,index=[1,2,3,4])
-raw.to_pickle('Codons/data/Drosophila.Melanogaster/cleanedData.pkl')
-reportDataDf.to_pickle('Codons/data/Drosophila.Melanogaster/reportData.pkl')
-
-# def cleanData(raw_df):
-#     for index,record in raw_df.iterrows():
-#         pass
-
-#print(type(my_dict[next(iter(my_dict))].__dict__.keys()))
-# for k,v in my_dict.items():
-    # print("Key: %s "  "Value %s" %(k, v.__dict__.keys()))
-#['_seq', 'id', 'name', 'description', 'dbxrefs', 'annotations', '_per_letter_annotations', 'features']
+raw.to_pickle('C:/Users/nilsr/Documents/HS-Mannheim/IM1/PMDS/Codons/data/Homo.Sapiens/cleanedData.pkl')
+reportDataDf.to_pickle('C:/Users/nilsr/Documents/HS-Mannheim/IM1/PMDS/Codons/data/Homo.Sapiens/reportData.pkl')

@@ -56,6 +56,12 @@ codons_sorted = ["TTT", "TTC", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATT", 
                  "AAA", "AAG", "GAT", "GAC", "GAA", "GAG", "TGT", "TGC", "TGG", "CGT", "CGC", "CGA", "CGG",
                  "AGA", "AGG", "GGT", "GGC", "GGA", "GGG", "TAA", "TAG", "TGA"]
 
+codons_sorted_no_stop = ["TTT", "TTC", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATT", "ATC", "ATA", "ATG", "GTT", "GTC",
+                         "GTA", "GTG", "TCT", "TCC", "TCA", "TCG", "AGT", "AGC", "CCT", "CCC", "CCA", "CCG", "ACT", "ACC", "ACA", "ACG",
+                         "GCT", "GCC", "GCA", "GCG", "TAT", "TAC", "CAT", "CAC", "CAA", "CAG", "AAT", "AAC",
+                         "AAA", "AAG", "GAT", "GAC", "GAA", "GAG", "TGT", "TGC", "TGG", "CGT", "CGC", "CGA", "CGG",
+                         "AGA", "AGG", "GGT", "GGC", "GGA", "GGG"]
+
 codons_to_integer = dict((c, i) for i, c in enumerate(codons))
 integer_to_codons = dict((i, c) for i, c in enumerate(codons))
 codons_to_sorted_integer = dict((c, i) for i, c in enumerate(codons_sorted))
@@ -127,6 +133,13 @@ def filter_sequence_length(df, min_length, max_length):
     filtered_df = filtered_df.drop(columns=['sequence_length'])
     return filtered_df
 
+# Filter out rows that contain "X" as an amino acid
+def remove_x_rows(df):
+    indices_to_drop = []
+    for idx, row in df.iterrows():
+        if 'X' in str(row['translation'].seq):
+            indices_to_drop.append(idx)
+    return df.drop(indices_to_drop)
 
 # Function to split a tensor into chunks of max_length characters
 def _split_tensor(t, max_length=500):
@@ -184,17 +197,16 @@ organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 class CodonDataset(Dataset):
     def __init__(self,
                  organism: Literal["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"],
-                 split: Literal["train", "test"] = "train",
+                 split: Literal["train", "test", "valid"] = "train",
                  min_length: int = None, 
                  max_length: int = None,
                  add_speeds = False,
                  cut_data: bool = False,
                  padding_pos: Literal["left", "right"] = "right",
                  one_hot_aa: bool = True,
+                 filter_x: bool = False,
                  data_path: str = "../data",
-                 device = torch.device("cpu")):
-        self.device = device
-        padding_char = "_"
+                 device=torch.device("cpu")):
 
         # Check for errors
         if organism not in organisms:
@@ -214,6 +226,9 @@ class CodonDataset(Dataset):
 
         # Read dataframe
         df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
+
+        if filter_x:
+            df = remove_x_rows(df)
 
         if not cut_data:
             df = filter_sequence_length(df, min_length, max_length)
@@ -284,3 +299,7 @@ def load_model(model_name: str, organism: str, device=None, get_all: bool = Fals
     model = torch.load(f"../ml_models/{organism}/{newest_model}", map_location=device)
     print(f"Model loaded: {newest_model}")
     return model
+
+
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#train_dataset = CodonDataset("Homo.Sapiens", "train", None, 500, cut_data=True, one_hot_aa=False, filter_x=True, data_path='../data', device=device)
