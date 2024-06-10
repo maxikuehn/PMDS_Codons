@@ -136,66 +136,35 @@ def compute_accuracy(predictions: list, labels: list) -> float:
     acc = accuracy_score(labels, predictions)
     return acc
 
-
-def evaluate_model(model, device, test_loader: DataLoader) -> list:
+def plot_training(trainings_losses: list, trainings_accuracies: list, valid_accs: list = None) -> plt.Figure:
     """
-    This function evaluates the model on the test data
-    ------
-    model: model to evaluate
-    test_loader: DataLoader with the test data
-    ------
-    returns: list with the predictions and labels
-    """
-    model.eval()  # Set the model to evaluation mode
-    accuracies = []
-
-    with torch.no_grad():
-        for input_data, labels in test_loader:
-
-            input_data = input_data.to(device)
-            labels = labels.to(device)
-
-            labels = labels.view(-1)
-
-            # Forward pass
-            outputs = model(input_data)
-            
-            _, predicted = torch.max(outputs, 1)
-            predicted = predicted.view(-1)
-
-            # Compute custom metrics
-            accuracy = compute_accuracy(predicted.cpu(), labels.cpu())
-            accuracies.append(accuracy)
-
-    # Compute average accuracy
-    
-    return predicted, labels, accuracies
-
-
-
-def plot_training(trainings_losses: list, trainings_accuracies: list) -> plt.Figure:
-    """
-    This function plots the training loss and accuracy
+    This function plots the training loss and accuracy.
     ------
     trainings_losses: list with the training losses (1d list)
     trainings_accuracies: list with the training accuracies (1d list)
+    valid_accs: list with the validation accuracies (1d list), optional
     ------
     returns: plot with the training loss and accuracy
     """
     plt.figure(figsize=(15, 5))
-    #plt.suptitle(title, fontsize=20)
 
+    # Plot training loss
     plt.subplot(1, 2, 1)
-    plt.plot(trainings_losses)
+    plt.plot(trainings_losses, label='Training Loss')
     plt.title('Training Loss', fontsize=20)
     plt.xlabel('Epoch', fontsize=15)
     plt.ylabel('Loss', fontsize=15)
+    plt.legend()
 
+    # Plot training and validation accuracy
     plt.subplot(1, 2, 2)
-    plt.plot(trainings_accuracies)
+    plt.plot(trainings_accuracies, label='Training Accuracy')
+    if valid_accs is not None:
+        plt.plot(valid_accs, label='Validation Accuracy')
     plt.title('Training Accuracy', fontsize=20)
     plt.xlabel('Epoch', fontsize=15)
     plt.ylabel('Accuracy', fontsize=15)
+    plt.legend()
 
     return plt
 
