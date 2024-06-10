@@ -7,6 +7,8 @@ ml_models/Drosophila.Melanogaster/not_relevant
 rnn_nohup.out
 rnn_nohup.err
 
+runs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
