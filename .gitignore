@@ -1,3 +1,6 @@
+ml_models/E.Coli/not_relevant
+ml_models/Drosophila.Melanogaster/not_relevant
+
 *.local
 .DS_Store
 
