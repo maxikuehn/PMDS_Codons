@@ -661,7 +661,7 @@ def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
         tick.set_color(colors[i])
     # set size of tje x axis labels
     plt.xticks(fontsize=15)
-    return plt
+    return plt, keys
 
 
 def group_codons(sequence):
@@ -683,7 +683,7 @@ def max_cub_predictions(organism):
     return pred_codons_bc
 
 
-def create_pn_dict(predicted_m, labels, organism):
+def create_pn_dict(predicted_m, labels, organism, sorting={}):
     '''
     This function creates a dictionary of the following form:
     {
@@ -706,14 +706,18 @@ def create_pn_dict(predicted_m, labels, organism):
     labels = np.array(labels)
 
     pn_dict = {}
-    for codon in ml_helper.codons_sorted:
-        pn_dict[codon] = {
-            "num": (labels == codon).sum(),
-            "P_M==B": 0, # positive, where model is baseline
-            "P_M!=B": 0, # positive, where model is not baseline
-            "N_M==B": 0, # negative, where model is baseline
-            "N_M!=B": 0  # negative, where model is not baseline
-        }
+    sorting_dict = ml_helper.codons_sorted
+    if sorting != {}:
+        sorting_dict = sorting
+    for codon in sorting_dict:
+        if (labels == codon).sum() != 0:
+            pn_dict[codon] = {
+                "num": (labels == codon).sum(),
+                "P_M==B": 0, # positive, where model is baseline
+                "P_M!=B": 0, # positive, where model is not baseline
+                "N_M==B": 0, # negative, where model is baseline
+                "N_M!=B": 0  # negative, where model is not baseline
+            }
 
     for i, codon_l in enumerate(labels):
         if codon_l == predicted_m[i]:
@@ -768,4 +772,72 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
 
     # Show the plot
     plt.tight_layout()
+    plt.show()
+
+
+def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
+    '''
+    This function plots the accuracies of different organisms for each classifier
+    The accuracies must be given in the following format:
+    accuracies = {
+        "E.Coli": {
+            "Max CUB": 0.5186,
+            "Transformer": 0.5264
+    }, ...
+    -------------------------
+    accuracies: accuracies for each classifier
+    bar_labels: names for the classifiers in the bar plot
+    title: title for the plot
+    value_decimals: on which number of decimals to round the value texts in the plot
+}
+    '''
+    colors = ['#03396c', '#6497b1', '#011f4b', '#005b96']
+
+    # Prepare data for plotting
+    organisms = list(accuracies.keys())
+    classifier_labels = accuracies[organisms[0]].keys()
+    values_list = []
+    for label in classifier_labels:
+        labels_list = []
+        for org in organisms:
+            if label in accuracies[org]:
+                labels_list.append(accuracies[org][label])
+            else:
+                labels_list.append(0)
+        values_list.append(labels_list)
+
+    # Number of bars
+    x = np.arange(len(organisms))
+
+    # Create the plot
+    fig, ax = plt.subplots()
+
+    # Plotting the bars
+    bars = []
+    ylim=(0, 1)
+    bar_width = 0.35 / len(classifier_labels) * 2
+    for i, values in enumerate(values_list):
+        bars.append(ax.bar(x + i * bar_width - (len(values_list) - 1) * bar_width / 2, values, bar_width, label=bar_labels[i], color=colors[i]))
+
+    # Adding labels and title
+    ax.set_xlabel("Organismus")
+    ax.set_ylabel("Accuracy")
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(organisms)
+    ax.set_ylim(*ylim)
+    ax.legend()
+
+    # Adding value labels on top of the bars
+    def add_value_labels(bars):
+        for bar_group in bars:
+            for bar in bar_group:
+                height = bar.get_height()
+                if height != 0:
+                    height = round(height, value_decimals)
+                    ax.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height}', ha='center', va='bottom')
+
+    add_value_labels(bars)
+
+    # Display the plot
     plt.show()

@@ -41,6 +41,8 @@ amino_acids_to_codons = {
     '_': ['___']
 }
 
+codon_to_amino_acid = {codon: aa for aa, codons in amino_acids_to_codons.items() for codon in codons}
+
 aminoacids_to_integer = dict((a, i) for i, a in enumerate(amino_acids))
 integer_to_aminoacids = dict((i, a) for i, a in enumerate(amino_acids))
 

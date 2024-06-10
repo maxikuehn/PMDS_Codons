@@ -169,7 +169,7 @@ class CustomTransformerEncoderLayer(Module):
     def forward(
             self,
             src: Tensor,
-            attn_weights_needed: bool,
+            attn_weights_needed: bool = False,
             src_mask: Optional[Tensor] = None,
             src_key_padding_mask: Optional[Tensor] = None,
             is_causal: bool = False) -> Tensor:
@@ -320,7 +320,7 @@ class CustomTransformerEncoderLayer(Module):
             x, attn_weights = self.self_attn(x, x, x,
                             attn_mask=attn_mask,
                             key_padding_mask=key_padding_mask,
-                            need_weights=True, is_causal=is_causal)
+                            need_weights=True, is_causal=is_causal)[0:2]
             return self.dropout1(x), attn_weights
         else:
             x = self.self_attn(x, x, x,
