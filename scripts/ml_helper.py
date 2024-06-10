@@ -206,6 +206,7 @@ class CodonDataset(Dataset):
                  one_hot_aa: bool = True,
                  filter_x: bool = False,
                  data_path: str = "../data",
+                 shuffled: bool = False,
                  device=torch.device("cpu")):
 
         # Check for errors
@@ -225,7 +226,8 @@ class CodonDataset(Dataset):
         self.padding_char = "_"
 
         # Read dataframe
-        df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}.pkl")
+        shuffled_appendix = "_shuffled" if shuffled else ""
+        df = pd.read_pickle(f"{data_path}/{organism}/cleanedData_{split}{shuffled_appendix}.pkl")
 
         if filter_x:
             df = remove_x_rows(df)
