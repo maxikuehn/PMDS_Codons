@@ -222,6 +222,7 @@ class CodonDataset(Dataset):
         self.cut_data = cut_data
         self.padding_pos = padding_pos
         self.one_hot_aa = one_hot_aa
+        self.shuffled = shuffled
         self.device = device
         self.padding_char = "_"
 
