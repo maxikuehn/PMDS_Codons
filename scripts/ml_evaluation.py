@@ -742,12 +742,38 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
     model_name: name of the model (e.g. 'Transformer')
     organism: organism name (e.g. 'Mensch')
     '''
+    amino_acid_to_color = {
+        'A': '#e6194B',  # Red
+        'C': '#3cb44b',  # Green
+        'D': '#ffe119',  # Yellow
+        'E': '#4363d8',  # Blue
+        'F': '#f58231',  # Orange
+        'G': '#911eb4',  # Purple
+        'H': '#42d4f4',  # Cyan
+        'I': '#f032e6',  # Magenta
+        'K': '#bfef45',  # Lime
+        'L': '#fabed4',  # Pink
+        'M': '#469990',  # Teal
+        'N': '#dcbeff',  # Lavender
+        'P': '#9A6324',  # Brown
+        'Q': '#68b300',  # lindgreen
+        'R': '#800000',  # Maroon
+        'S': '#aaffc3',  # Mint
+        'T': '#808000',  # Olive
+        'V': '#ffd8b1',  # Apricot
+        'W': '#000075',  # Navy
+        'Y': '#a9a9a9',  # Grey
+        '*': '#000000'   # Black for stop codon
+    }
+
     # Extract data for plotting
     labels = list(pn_dict.keys())
     P_M_equal_B = [pn_dict[label]['P_M==B'] for label in labels]
     P_M_not_equal_B = [pn_dict[label]['P_M!=B'] for label in labels]
     N_M_equal_B = [pn_dict[label]['N_M==B'] for label in labels]
     N_M_not_equal_B = [pn_dict[label]['N_M!=B'] for label in labels]
+
+    colors = [amino_acid_to_color[dict_aa_codon(label)] for label in labels]
 
     # Plotting the stacked bar chart
     plt.figure(figsize=(12, 4))
@@ -764,15 +790,22 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
     # Add labels
     plt.xlabel('Codons', fontweight='bold')
     plt.ylabel('Relativer Anteil', fontweight='bold')
-    plt.xticks(r, labels, rotation=45)
+    #plt.xticks(r, labels, rotation=45)
     plt.title(f'Anteile von korrekten (P) und falschen (N) Vorhersagen\ndes {model_name} Modells (M) im Vergleich zur Max CUB Baseline (B) beim Organismus {organism_name}')
 
     # Add a legend
     plt.legend()
-
-    # Show the plot
     plt.tight_layout()
-    plt.show()
+
+    ax = plt.gca()
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=90)
+    for i, tick in enumerate(ax.get_xticklabels()):
+        tick.set_color(colors[i])
+    # set size of tje x axis labels
+    plt.xticks(fontsize=15)
+
+    return plt
 
 
 def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
