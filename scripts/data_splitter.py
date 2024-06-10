@@ -35,7 +35,7 @@ def shuffle_n_pickle(organism: str) -> None:
         shuffled_seq = df.apply(lambda row: [row['seq_grouped'][i] for i in row['random_index']], axis=1)
         df['shuffeld_sequence'] = shuffled_seq
         # Concatenate the shuffled codons
-        df['shuffeld_sequence'] = df.apply(lambda row: SeqRecord(Seq(''.join(row['shuffeld_sequence']))), axis=1)
+        df['shuffeld_sequence'] = df.apply(lambda row: Seq(''.join(row['shuffeld_sequence'])), axis=1)
  
         # Checks for data quality
         # check if shuffled codon and amino sequences are valid
@@ -53,7 +53,7 @@ def shuffle_n_pickle(organism: str) -> None:
         assert not_same_count == 0, f"Amino Acid Sequence counter doesnt match in shuffeling: {not_same_count}"
 
         # check if shuffeld amino acids matches with translated seq
-        df['is_translation_same'] = df.apply(lambda row: str(row['shuffled_translation'].seq) == str(df['back_translated_seq'][row.name].seq), axis=1)
+        df['is_translation_same'] = df.apply(lambda row: str(row['shuffled_translation'].seq) == str(df['back_translated_seq'][row.name]), axis=1)
         not_same_count = df['is_translation_same'].value_counts().get(False, 0)
         assert not_same_count == 0, f"Shuffeld Amino Acid Sequence and  Translated shuffeld codon seqeunce doesnt match in shuffeling: {not_same_count}"
 
@@ -67,5 +67,5 @@ def shuffle_n_pickle(organism: str) -> None:
 
 organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
 for organism in organisms:
-    split_n_pickle(organism)
-    #shuffle_n_pickle(organism)
+    # split_n_pickle(organism)
+    shuffle_n_pickle(organism)
