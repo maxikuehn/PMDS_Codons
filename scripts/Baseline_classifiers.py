@@ -4,6 +4,7 @@ import numpy as np
 import random
 from numpy.random import choice
 from Classifier import Classifier
+import ml_helper as mlh
 
 class Bias_Weighted_Classifier(Classifier):
     # Bias must be a dict with amino acids as keys and dicts with codons as keys and biases as values
@@ -64,3 +65,42 @@ class Max_Bias_Baseline_Classifier(Bias_Weighted_Classifier):
             return ''
         codon_probs = self.bias[amino_acid]
         return max(codon_probs, key=codon_probs.get)
+    
+
+# Checks based on the given aa sequences and codon predictions 
+# if there are codons used that do not belong to the amino acid
+# and use max cub classifier for these instead
+def check_and_replace_codons(aa_sequences, codon_predictions_list, usage_biases):
+    max_weighted_bc = Max_Bias_Baseline_Classifier(usage_biases)
+    total_codons = 0
+    not_possible_codons = 0
+    used_max_bias = 0
+    for i, aa_seq in enumerate(aa_sequences):
+        codon_predictions = codon_predictions_list[i]
+        for j, aa in enumerate(aa_seq):
+            total_codons += 1
+            codon_pred = codon_predictions[j]
+            max_bias_pred = max_weighted_bc._predict_codon(aa)
+            if codon_pred not in mlh.amino_acids_to_codons[aa]:
+                not_possible_codons += 1
+                
+                codon_predictions_list[i][j] = max_bias_pred
+            else:
+                if codon_pred == max_bias_pred:
+                    used_max_bias += 1
+    max_bias_ratio = used_max_bias / total_codons
+    print(f"Model used max bias codon for {max_bias_ratio*100:.2f}% of possible codon predictions")
+    not_possible_ratio = not_possible_codons / total_codons
+    print(f"Replaced {not_possible_ratio*100:.2f}% of codons")
+    return codon_predictions_list
+
+
+# Returns the max cub accuracy for a specific organism
+def get_max_cub_accuracy(organism, df, usage_biases):
+    max_weighted_bc = Max_Bias_Baseline_Classifier(usage_biases)
+    amino_seq = df['translation'].apply(lambda seq: list(seq))
+    true_codons = df['codons']
+    pred_codons_bc = max_weighted_bc.predict_codons(amino_seq)
+    accuracy = max_weighted_bc.calc_accuracy(true_codons, pred_codons_bc)
+    accuracy = round(accuracy, 4)
+    print(f"Organismus {organism} - Accuracy: {accuracy}")

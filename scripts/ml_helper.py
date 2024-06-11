@@ -12,6 +12,7 @@ from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import Dataset
 import numpy as np
+import pickle as pkl
 
 amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '*',
                '_']
@@ -272,7 +273,7 @@ class CodonDataset(Dataset):
         return aa_sequence, codon_sequence
 
 
-def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str = None):
+def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str = None, not_relevant=False):
     # timestamp
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
@@ -280,31 +281,72 @@ def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str 
     appendix = "_" + appendix if appendix is not None else ""
 
     path = f"../ml_models/{organism}/{timestamp}_{model_name}{appendix}.pt"
+    if not_relevant:
+        path = f"../ml_models/{organism}/not_relevant/{timestamp}_{model_name}{appendix}.pt"
 
     # save model in ml_models in a single file
     torch.save(model, path)
     print(f"Model saved as {timestamp}_{model_name}{appendix}.pt")
 
 
-def load_model(model_name: str, organism: str, device=None, get_all: bool = False):
+def load_model(model_name: str, organism: str, device=None, get_all: bool = False, not_relevant=False):
     # get all models from organism
-    organism_models = os.listdir(f"../ml_models/{organism}")
+    organism_models = os.listdir(f"../ml_models/{organism}{'/not_relevant' if not_relevant else ''}")
     # get all models from type
     models = [model for model in organism_models if model_name in model]
     # sort by date
     models.sort()
 
     if get_all:
-        models = [{"name": model, "model": torch.load(f"../ml_models/{organism}/{model}", map_location=device)} for model in models]
+        models = [{"name": model, "model": torch.load(f"../ml_models/{organism}/{'not_relevant/' if not_relevant else ''}{model}", map_location=device)} for model in models]
         print(f"Loaded {len(models)} models")
         return models
 
     # get newest model
     newest_model = models[-1]
-    model = torch.load(f"../ml_models/{organism}/{newest_model}", map_location=device)
+    model = torch.load(f"../ml_models/{organism}/{'not_relevant/' if not_relevant else ''}{newest_model}", map_location=device)
     print(f"Model loaded: {newest_model}")
     return model
 
 
-#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#train_dataset = CodonDataset("Homo.Sapiens", "train", None, 500, cut_data=True, one_hot_aa=False, filter_x=True, data_path='../data', device=device)
+def to_pickle(obj, path):
+    with open(path, 'wb') as file:
+        pkl.dump(obj, file)
+
+def from_pickle(path): 
+    with open(path, 'rb') as file:
+        return pkl.load(file)
+    
+
+# Cuts a sequence based on the max length and creates a 
+# bitmap so that the sequence can be put together again
+def cut_sequence(aa_sequence, max_length):
+    aa_sequences = []
+    bit_map = "" # 1 if sequence is cut, 0 if not
+    if aa_sequence.shape[0] <= max_length:
+        aa_sequences = [aa_sequence]
+        bit_map = "0"
+    elif aa_sequence.shape[0] > max_length:
+        aa_splits = _split_tensor(aa_sequence, max_length)
+        aa_sequences = aa_splits
+        bit_map = "1" * (len(aa_splits) - 1) + "0"
+    return aa_sequences, bit_map
+
+
+# Rebuilds a sequence based on the cut sequences and the bitmap from cutting
+def rebuild_sequences(sequences, cut_bit_map):
+    new_sequences = []
+    new_sequence = None
+    for i, sequence in enumerate(sequences):
+        if new_sequence is None:
+            new_sequence = sequence
+        elif new_sequence is not None:
+            if type(new_sequence) == torch.Tensor:
+                new_sequence = torch.cat((new_sequence, sequence))
+            elif type(new_sequence) == list:
+                new_sequence += sequence
+
+        if cut_bit_map[i] == "0":
+            new_sequences.append(new_sequence)
+            new_sequence = None
+    return new_sequences
