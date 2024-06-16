@@ -843,3 +843,22 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
 
     # Display the plot
     plt.show()
+
+
+def plot_accuracies_per_segment(accuracies, elements, title):
+    # Create the plot
+    fig, ax1 = plt.subplots()
+    ax1.set_title(title)
+
+    ax1.set_xlabel("Segment")
+    ax1.set_ylabel("Anzahl Elemente pro Segment")
+    ax1.bar(range(len(elements)), elements)
+
+    ax2 = ax1.twinx()
+
+    ax2.set_ylabel("Accuracy")
+    ax2.set_ylim(0, 1)
+    ax2.grid(True)
+    ax2.plot(accuracies, color='darkgreen')
+
+    plt.show()

@@ -8,6 +8,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
+from Classifier import Classifier
 
 class RNN(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, output_size: int, batch_size=1) -> None:
@@ -123,7 +124,7 @@ def predict(model: RNN, input, device=torch.device("cpu")):
             out = F.softmax(out, dim=1)
             out = torch.argmax(out, dim=1)
             prediction.append(out.item())
-    return np.asarray(prediction)
+    return prediction
 
 
 def evaluate(model: RNN, data: DataLoader, device=torch.device("cpu")):
@@ -135,7 +136,7 @@ def evaluate(model: RNN, data: DataLoader, device=torch.device("cpu")):
 
     for input, label in data:
         l = np.asarray(label.view(-1))
-        p = predict(model, input, device=device)
+        p = np.asarray(predict(model, input, device=device))
 
         predictions = np.append(predictions, p)
         labels = np.append(labels, l)
@@ -143,3 +144,22 @@ def evaluate(model: RNN, data: DataLoader, device=torch.device("cpu")):
     _ = (predictions == labels).sum() / len(predictions)  # is same as accuracy_score
     acc = accuracy_score(labels, predictions)
     return predictions, labels, acc
+
+
+class RNN_Classifier(Classifier):
+    def __init__(self, trained_model, seed=42):
+        self.model = trained_model
+        super().__init__(seed)
+
+    def predict_codons(self, data: DataLoader, device=torch.device("cpu"), replace=False):
+
+        predictions = []
+        labels = []
+        for input, label in data:
+            l = label.view(-1).int()
+            p = predict(self.model, input, device=device)
+
+            predictions.append(p)
+            labels.append(l.tolist())
+
+        return predictions, labels

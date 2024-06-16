@@ -1,6 +1,8 @@
 import numpy as np
 import random
 
+from sklearn.metrics import accuracy_score
+
 class Classifier:
     def __init__(self, seed=42):
         np.random.seed(seed)
@@ -45,7 +47,48 @@ class Classifier:
     def calc_accuracy(self, true_codons, pred_codons, pad=''):
         error_rate = self.calc_error_rate(true_codons, pred_codons, pad=pad)
         return 1 - error_rate
-    
+
+    def calc_accuracy_per_segment(self, true_codon_list, pred_codon_list, segment_size=10):
+        """
+        Calculate the accuracy per segment for a given set of true and predicted codon lists.
+
+        Parameters:
+        true_codon_list (list): The list of true codons.
+        pred_codon_list (list): The list of predicted codons.
+        segment_size (int, optional): The size of each segment. Defaults to 10.
+
+        Returns:
+        segment_accuracies (list): The list of accuracies per segment.
+        segment_elements (list): The list of number of elements per segment.
+        """
+        longest_seq = len(max(true_codon_list, key=len))
+
+        # pad both sequences
+        pred = self.pad_and_convert_seq(pred_codon_list, pad="")
+        lab = self.pad_and_convert_seq(true_codon_list, pad="")
+
+        # split sequences into segments
+        pred = np.split(pred, np.arange(1, int((longest_seq + segment_size-1) / segment_size))*segment_size, axis=1)
+        lab = np.split(lab, np.arange(1, int((longest_seq + segment_size-1) / segment_size))*segment_size, axis=1)
+
+        # flatten segments
+        pred = [p.flatten() for p in pred]
+        lab = [l.flatten() for l in lab]
+
+        # remove padding
+        pred = [p[p != ""] for p in pred]
+        lab = [l[l != ""] for l in lab]
+
+        segment_accuracies = []
+        segment_elements = []
+
+        for i in range(len(pred)):
+            acc = accuracy_score(lab[i], pred[i])
+            # print(f"Segment {i+1}: {acc}", lab[i], pred[i])
+            segment_accuracies.append(acc)
+            segment_elements.append(len(lab[i]))
+        return segment_accuracies, segment_elements
+
     # calculates the error rate per amino acid
     def calc_amino_acid_error_rate(self, amino_seq, true_codons, pred_codons):
         amino_seq = self.pad_and_convert_seq(amino_seq)
