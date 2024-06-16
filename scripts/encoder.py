@@ -13,6 +13,7 @@ import pandas as pd
 import ml_helper as mlh
 import Classifier
 import Baseline_classifiers as bc
+import custom_transformer_encoder as cte
 
 SPEEDS_ADDED = False
 SEED = 42
@@ -64,6 +65,7 @@ def load_shuffled_data():
 def group_codons(sequence):
     return [''.join(sequence[i:i+3]) for i in range(0, len(sequence), 3)]
 
+
 def set_seed(SEED=SEED):
     random.seed(SEED)
     np.random.seed(SEED)
@@ -104,12 +106,12 @@ class EncoderClassifier(nn.Module):
         self.pos_enc = pos_enc
         self.pos_encoder = PositionalEncoding(embed_dim, dropout)
 
-        self.encoder_layer = torch.nn.TransformerEncoderLayer(
+        self.encoder_layer = cte.TransformerEncoderLayer(
             d_model=embed_dim,
             nhead=num_heads,
             batch_first=True
         )
-        self.encoder = torch.nn.TransformerEncoder(
+        self.encoder = cte.TransformerEncoder(
             encoder_layer=self.encoder_layer,
             num_layers=num_layers,
         )
