@@ -4,6 +4,8 @@ import Bio.Seq as Bio
 
 def read_organism(organism_name):
     global organism
+    global global_cub
+    global_cub = pd.read_pickle(f"C:/Users/nilsr/Documents/HS-Mannheim/IM1/PMDS/Codons/data/{organism_name}/usageBias.pkl")
     organism = pd.read_pickle(f"C:/Users/nilsr/Documents/HS-Mannheim/IM1/PMDS/Codons/data/{organism_name}/cleanedData.pkl")
 
 def get_codons_and_polypeptides()->tuple[pd.Series,pd.Series]:
@@ -43,6 +45,14 @@ def calc_relative_index_bias(processed_codons:pd.Series):
         relative_big_dict[index] = {k: v/total for k,v in big_dict[index].items()}
     return relative_big_dict
 
+def add_treshold_to_bias(relaitve_big_dict:dict):
+    for index in relaitve_big_dict.keys():
+        sub_dict = relaitve_big_dict[index]
+        if len(sub_dict.keys()) < 10 and not index == 0:
+            for aa in sub_dict.keys():
+                sub_dict[aa] = (sub_dict[aa][1],global_cub[aa][sub_dict[aa][0]])
+    return relaitve_big_dict
+
 def calc_max_bias_per_aa(relative_big_dict):
     for index in range(len(relative_big_dict)):
         temp = relative_big_dict[index]
@@ -57,6 +67,15 @@ def calc_max_bias_per_aa(relative_big_dict):
         relative_big_dict[index] = temp2
 
     return relative_big_dict
+
+def calc_i_cub_per_chunk(processed_codons:pd.Series,chunk_width:int):
+    dict_list = list()
+    for length in range(0,len(processed_codons),chunk_width):
+        if length + chunk_width > len(processed_codons):
+            dict_list.append(calc_relative_index_bias(processed_codons[length:]))
+        else:
+            dict_list.append(calc_relative_index_bias(processed_codons[length:length+chunk_width]))
+    return dict_list    
 
 def max_bias_per_index(relative_big_dict):
     max_values = [max(relative_big_dict[index].items()) for index in relative_big_dict]
@@ -76,7 +95,6 @@ def predict_on_index(polypeptide,max_on_index):
 
 def predict_organism(codons,polypeptide,max_on_index):
         predicted_sequences = [predict_on_index(element,max_on_index) for element in polypeptide]
-        print(predicted_sequences[0])
         return calc_prediction_accuraccy(predicted_sequences,codons)
 
 def compare_prediction_with_reality(pred,real):
@@ -90,11 +108,14 @@ def compare_prediction_with_reality(pred,real):
 def calc_prediction_accuraccy(preds,reals):
     return np.mean([compare_prediction_with_reality(element[0],element[1]) for element in zip(preds,reals)])
 
-read_organism('Homo.Sapiens')
+organism_name = 'Homo.Sapiens'
+read_organism(organism_name)
 processed_codons,processed_polypeptides = preprocess_series(*get_codons_and_polypeptides())
 relative_freq = calc_relative_index_bias(processed_codons)
 stuff = calc_max_bias_per_aa(relative_freq)
-print(predict_organism(processed_codons,processed_polypeptides,stuff))
+print("Prediction Accuracy for ",organism_name,": ",predict_organism(processed_codons,processed_polypeptides,stuff))
+thresholded = add_treshold_to_bias(relative_freq)
+print("Prediction Accuracy for ",organism_name," after Threshold: ",predict_organism(processed_codons,processed_polypeptides,thresholded))
 # relative_bias = calc_relative_index_bias(processed_codons)
 # codon_with_max_bias = max_bias_per_index(relative_bias)
 # print(predict_organism(processed_codons,processed_polypeptides,codon_with_max_bias))
