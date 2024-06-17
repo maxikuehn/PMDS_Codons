@@ -48,7 +48,7 @@ class Classifier:
         error_rate = self.calc_error_rate(true_codons, pred_codons, pad=pad)
         return 1 - error_rate
 
-    def calc_accuracy_per_segment(self, true_codon_list, pred_codon_list, segment_size=10):
+    def calc_accuracy_per_segment(self, true_codon_list, pred_codon_list, segment_size=10, cut_data_at=0.2):
         """
         Calculate the accuracy per segment for a given set of true and predicted codon lists.
 
@@ -83,6 +83,8 @@ class Classifier:
         segment_elements = []
 
         for i in range(len(pred)):
+            if len(lab[i]) < len(lab[0]) * cut_data_at:
+                break
             acc = accuracy_score(lab[i], pred[i])
             # print(f"Segment {i+1}: {acc}", lab[i], pred[i])
             segment_accuracies.append(acc)
