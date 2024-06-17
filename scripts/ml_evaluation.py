@@ -861,6 +861,6 @@ def plot_accuracies_per_segment(accuracies, elements, title):
     ax2.set_ylabel("Accuracy")
     ax2.set_ylim(0, 1)
     ax2.grid(True)
-    ax2.plot(accuracies, color='darkgreen')
+    ax2.plot(accuracies, color='darkgreen', linewidth=3)
 
     plt.show()
