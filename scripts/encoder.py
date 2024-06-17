@@ -46,6 +46,15 @@ def set_organism(_organism, BATCH_SIZE=32):
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    load_test_data(organism)
+
+
+def load_test_data(_organism):
+    global organism
+    global df
+    global usage_biases
+
+    organism = _organism
 
     df = pd.read_pickle(f"../data/{organism}/cleanedData_test.pkl")
     usage_biases = pd.read_pickle(f"../data/{organism}/usageBias.pkl")
