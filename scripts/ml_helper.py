@@ -289,22 +289,24 @@ def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str 
     print(f"Model saved as {timestamp}_{model_name}{appendix}.pt")
 
 
-def load_model(model_name: str, organism: str, device=None, get_all: bool = False, not_relevant=False):
-    # get all models from organism
-    organism_models = os.listdir(f"../ml_models/{organism}{'/not_relevant' if not_relevant else ''}")
+def load_model(model_name: str, organism: str, device=None, get_all: bool = False, not_relevant=False, path_model_dir=None):
+    if path_model_dir is None:
+        path_model_dir = "../ml_models"
+
+    organism_models = os.listdir(f"{path_model_dir}/{organism}{'/not_relevant' if not_relevant else ''}")
     # get all models from type
     models = [model for model in organism_models if model_name in model]
     # sort by date
     models.sort()
 
     if get_all:
-        models = [{"name": model, "model": torch.load(f"../ml_models/{organism}/{'not_relevant/' if not_relevant else ''}{model}", map_location=device)} for model in models]
+        models = [{"name": model, "model": torch.load(f"{path_model_dir}/{organism}/{'not_relevant/' if not_relevant else ''}{model}", map_location=device)} for model in models]
         print(f"Loaded {len(models)} models")
         return models
 
     # get newest model
     newest_model = models[-1]
-    model = torch.load(f"../ml_models/{organism}/{'not_relevant/' if not_relevant else ''}{newest_model}", map_location=device)
+    model = torch.load(f"{path_model_dir}/{organism}/{'not_relevant/' if not_relevant else ''}{newest_model}", map_location=device)
     print(f"Model loaded: {newest_model}")
     return model
 
