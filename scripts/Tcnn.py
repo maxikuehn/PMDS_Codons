@@ -286,8 +286,51 @@ class Tcn_Classifier(Classifier.Classifier):
     
 
 if __name__ == "__main__":
+
     import ml_helper
     import ml_evaluation
+
+
+        
+    pad_int = ml_helper.codons.index('___')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    for (org, segment_size) in [("E.Coli", 10), ("Drosophila.Melanogaster", 10), ("Homo.Sapiens", 10)]:
+        test_dataset = ml_helper.CodonDataset(organism=org, split="test", padding_pos=None, data_path='./data/', one_hot_aa=False)
+        test_loader = DataLoader(test_dataset, batch_size=1)
+        print(f"Datensatz geladen für {org}")
+
+        # test all models and save the best one for further evaluation
+        tcnn_Model = ml_helper.load_model("tcn", org, device=device, path_model_dir="./ml_models")
+
+        #classifier = rnn.RNN_Classifier(rnnModel)
+        classifier = Tcn_Classifier(tcnn_Model)
+        preds = classifier.predict_codons(test_loader)
+
+        predictions = []
+        for pred in preds:
+            pred_new = [int(p) if p != '___' and p != '' else int(pad_int) for p in pred]
+            predictions.append(pred_new)
+        
+
+        labels = []
+        for seq, lab in test_dataset:
+            # lab = seq_lab[1]
+            #print(lab)s
+            #lab = [str(mlh.integer_to_codons[c.item()]) for c in lab]
+            lab = [int(c.item()) for c in lab]
+            labels.append(lab)
+
+        for i, (lab, pred) in enumerate(zip(labels, predictions)):
+            if len(lab) != len(pred):
+                print(f"Mismatch at index {i}: labels length {len(lab)}, predictions length {len(pred)}")
+
+        
+        # labels = test_dataset[:][1]
+        acc = classifier.calc_accuracy(labels, predictions, pad='')
+        print(org, acc)
+
+
+"""
 
     pad_int = ml_helper.codons.index('___')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -326,3 +369,14 @@ if __name__ == "__main__":
 
         #seg_acc, seg_el = classifier.calc_accuracy_per_segment(labels, predictions, segment_size=segment_size, cut_off=0.25)
         ml_evaluation.plot_accuracies_per_segment(seg_acc, seg_el, f"Accuracy pro Segment mit einer Segmentgröße von {segment_size}\nRNN Modell und Daten für {org}")
+"""
+    
+
+
+"""
+alten modelle
+
+E.Coli 0.5384050694860479
+Drosophila.Melanogaster 0.5175590208781713
+Homo.Sapiens 0.5637122014002118
+"""

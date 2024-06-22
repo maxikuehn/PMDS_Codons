@@ -40,6 +40,7 @@ class Classifier:
     # calculates the error rate E = F / G (F: total number of errors, G: total number of codons)
     def calc_error_rate(self, true_codons, pred_codons, pad=''):
         true_codons = self.pad_and_convert_seq(true_codons)
+        pred_codons = self.pad_and_convert_seq(pred_codons)
         error_num = self._count_errors(true_codons, pred_codons, pad=pad)
         return error_num / true_codons[true_codons != pad].size
     
