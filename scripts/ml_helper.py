@@ -295,7 +295,7 @@ def load_model(model_name: str, organism: str, device=None, get_all: bool = Fals
 
     organism_models = os.listdir(f"{path_model_dir}/{organism}{'/not_relevant' if not_relevant else ''}")
     # get all models from type
-    models = [model for model in organism_models if model_name in model]
+    models = [model for model in organism_models if model_name in model and model.endswith(".pt")]
     # sort by date
     models.sort()
 
