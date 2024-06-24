@@ -866,3 +866,39 @@ def plot_accuracies_per_segment(accuracies, elements, title):
     ax2.plot(accuracies, color='darkgreen', linewidth=3)
 
     plt.show()
+
+
+# Function to plot training accuracies for given data
+def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
+    '''
+    Accuracies dict needs to be of following form:
+    training_accuracies = {
+        "E.Coli": [0.5213, 0.5473, 0.5563, ...],
+        "Fruchtfliege": ...,
+        "Mensch": ...
+    }
+    '''
+    colors = {
+        "E.Coli": 'green',
+        "Fruchtfliege": 'blue',
+        "Mensch": 'red'
+    }
+
+    # Plotting the training accuracies for each organism
+    plt.figure(figsize=(16, 5))
+
+    for organism, accuracies in training_accuracies.items():
+        epochs = range(1, len(accuracies) + 1)
+        plt.plot(epochs, accuracies, label=organism, color=colors[organism])
+
+    # Adding labels and title
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title(f'Training Accuracies over Epochs for the best {model_name} model')
+    plt.legend()
+
+    max_epochs = max(len(acc) for acc in training_accuracies.values())
+    plt.xticks(range(1, max_epochs + 1, epoch_distance))
+
+    # Display the plot
+    plt.show()

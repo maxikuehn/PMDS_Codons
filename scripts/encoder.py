@@ -28,11 +28,14 @@ usage_biases = None
 
 
 def set_organism(_organism, BATCH_SIZE=32):
+    load_train_valid_data(_organism, BATCH_SIZE)
+    load_test_data(_organism)
+
+
+def load_train_valid_data(_organism, BATCH_SIZE=32):
     global organism
     global train_loader
     global valid_loader
-    global df
-    global usage_biases
 
     organism = _organism
 
@@ -46,7 +49,6 @@ def set_organism(_organism, BATCH_SIZE=32):
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    load_test_data(organism)
 
 
 def load_test_data(_organism):
@@ -219,6 +221,7 @@ def train_model(model, num_epochs, loss_ignore_pad=True, learning_rate=0.0005, v
     start_time = time.time()
     last_loss = None
     saved_accuracies = []
+    all_accuracies = []
     epoch_num = 0
     for epoch in range(num_epochs):
         epoch_num += 1
@@ -259,7 +262,8 @@ def train_model(model, num_epochs, loss_ignore_pad=True, learning_rate=0.0005, v
         last_loss = epoch_loss
         
         avg_eval_loss, accuracy = evaluate_model(model, criterion, print_scores=False)
-        
+        all_accuracies.append(accuracy)
+
         epoch_time = round(time.time() - epoch_start_time,2)
         if print_epochs:
             print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss}, Eval Accuracy: {accuracy}, Took {epoch_time} s')
@@ -276,7 +280,7 @@ def train_model(model, num_epochs, loss_ignore_pad=True, learning_rate=0.0005, v
                
     total_time = round(time.time() - start_time,2)
     print(f'Last Loss: {last_loss}, Last Eval Accuracy: {accuracy}, Took {total_time} s')
-    return last_loss, accuracy, epoch_num
+    return last_loss, accuracy, all_accuracies, epoch_num
 
 
 def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos_enc, num_epochs, print_epochs, not_relevant=False):
@@ -291,7 +295,7 @@ def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos
     ).to(device)
 
     print(f"----- Start Training: {embed_dim} emb, {num_encoder_layers} layers, {num_heads} heads, {dropout} dropout, positional encoding: {pos_enc}, {num_epochs} epochs -----")
-    last_loss, accuracy, epoch_num = train_model(model, num_epochs, print_epochs=print_epochs)
+    last_loss, accuracy, all_accuracies, epoch_num = train_model(model, num_epochs, print_epochs=print_epochs)
 
     saved = False
     if last_loss >= 2:
@@ -300,26 +304,28 @@ def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos
     else:
         saved = True
         mlh.save_model(model, f'encoder_{embed_dim}em_{num_encoder_layers}l_{num_heads}h{"_posenc" if pos_enc else ""}_{str(dropout).replace(".","")}dr_{epoch_num}ep', organism, not_relevant=not_relevant)
-    return saved, accuracy
+    return saved, accuracy, all_accuracies
 
 
 def hyper_parameter_training(embed_dims, num_encoder_layers, num_heads, dropouts, pos_enc, epochs=50, print_epochs=True):
     not_saved = []
     accuracies = {}
+    all_accuracies_dict = {}
     for EMBED_DIM in embed_dims:
         for NUM_ENCODER_LAYERS in num_encoder_layers:
             for NUM_HEADS in num_heads:
                 for DROPOUT in dropouts:
                     for POS_ENC in pos_enc:
                         model_name = f'encoder_{EMBED_DIM}em_{NUM_ENCODER_LAYERS}l_{NUM_HEADS}h{"_posenc" if POS_ENC else ""}_{str(DROPOUT).replace(".","")}dr_{epochs}ep'
-                        saved, accuracy = train_parameter_model(EMBED_DIM, NUM_ENCODER_LAYERS, NUM_HEADS, DROPOUT, POS_ENC, epochs, print_epochs, not_relevant=True)
+                        saved, accuracy, all_accuracies = train_parameter_model(EMBED_DIM, NUM_ENCODER_LAYERS, NUM_HEADS, DROPOUT, POS_ENC, epochs, print_epochs, not_relevant=True)
                         accuracies[model_name] = accuracy
+                        all_accuracies_dict[model_name] = all_accuracies
                         if not saved:
                             not_saved.append(model_name)
     print("------------")
     print("Not saved as loss too high:")
     print(not_saved)
-    return accuracies
+    return accuracies, all_accuracies_dict
 
 
 # ---------------- Wrapping in Classifier Class ----------------
