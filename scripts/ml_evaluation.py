@@ -894,7 +894,7 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     # Adding labels and title
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
-    plt.title(f'Training Accuracies over Epochs for the best {model_name} model')
+    plt.title(f'Training Accuracies over Epochs for the best {model_name} model per organism')
     plt.legend()
 
     max_epochs = max(len(acc) for acc in training_accuracies.values())
