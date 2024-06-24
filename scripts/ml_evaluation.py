@@ -793,7 +793,7 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
     value_decimals: on which number of decimals to round the value texts in the plot
 }
     '''
-    colors = ['#03396c', '#6497b1', '#011f4b', '#005b96']
+    colors = ['#011f4b', '#6497b1', '#03396c', '#b3cde0', '#005b96']
 
     # Prepare data for plotting
     organisms = list(accuracies.keys())
@@ -812,12 +812,15 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
     x = np.arange(len(organisms))
 
     # Create the plot
-    fig, ax = plt.subplots()
+    plot_length = 6
+    if len(bar_labels) > 3:
+        plot_length = 9
+    fig, ax = plt.subplots(figsize=(plot_length, 4))
 
     # Plotting the bars
     bars = []
     ylim=(0, 1)
-    bar_width = 0.35 / len(classifier_labels) * 2
+    bar_width = 0.4 / len(classifier_labels) * 2
     for i, values in enumerate(values_list):
         bars.append(ax.bar(x + i * bar_width - (len(values_list) - 1) * bar_width / 2, values, bar_width, label=bar_labels[i], color=colors[i]))
 
@@ -836,8 +839,7 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
             for bar in bar_group:
                 height = bar.get_height()
                 if height != 0:
-                    height = round(height, value_decimals)
-                    ax.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height}', ha='center', va='bottom')
+                    ax.text(bar.get_x() + bar.get_width() / 2.0, height, f'{round(height, value_decimals)}', ha='center', va='bottom')
 
     add_value_labels(bars)
 
