@@ -1,4 +1,7 @@
-## Optimale Synonyme Codons
+# Optimale Synonyme Codons
+
+## Installation
+...
 
 ## Folder Structure
 ...

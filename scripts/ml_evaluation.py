@@ -199,8 +199,8 @@ def plot_confusion_matrix(labels: list, predicted: list, class_names: list, titl
     plt.xticks(tick_marks, class_names, rotation=45)
     plt.yticks(tick_marks, class_names)
 
-    plt.xlabel('Vorhersage', fontsize=15)
-    plt.ylabel('Richtige Kategorie', fontsize=15)
+    plt.xlabel('Prediction', fontsize=15)
+    plt.ylabel('Correct Category', fontsize=15)
     plt.xticks(rotation=90)
 
     return plt
@@ -234,8 +234,8 @@ def plot_confusion_matrix_sns(labels: list, predicted: list, class_names: list,
     sns.heatmap(conf_matrix, annot=mask, cmap=cmap, fmt='.2f',
                 xticklabels=class_names, yticklabels=class_names)
     plt.title(title, fontsize=20)
-    plt.xlabel('Vorhersage', fontsize=15)
-    plt.ylabel('Richtige Kategorie', fontsize=15)
+    plt.xlabel('Prediction', fontsize=15)
+    plt.ylabel('Correct Category', fontsize=15)
     return plt
 
 def dict_aa_codon(codon=None, filter_codon=True, filter_value='___'):
@@ -282,7 +282,6 @@ def plot_codon_acc(labels, predicted, title='Accuracy für jedes Codon'):
             codon_correct[labels_codon_names[i]] += 1
 
     codon_accuracies = {}
-    print(codon_correct)
     for key in codon_correct:
         codon_accuracies[key] = codon_correct[key] / len([c for c in labels_codon_names if c == key])
 
@@ -559,7 +558,7 @@ def plot_relative_codon_count(codon_counts, predicted, title='Relativer Anteil d
     plt.bar(keys, values, color=colors)
     plt.title(title, fontsize=20)
     #plt.xlabel('Codon')
-    plt.ylabel('Relativer Anteil der Vorhersagen', fontsize=15)
+    plt.ylabel('Relative frequency of predictions', fontsize=15)
     # rotate the x axis labels
     #plt.xticks(rotation=90)
 
@@ -617,7 +616,7 @@ def plot_cub(cub_dict, title="Codon Usage Bias für jedes Codon"):
     plt.bar(keys, values, color=colors)
     plt.title(title, fontsize=20)
     #plt.xlabel('Codon')
-    plt.ylabel('Relativer Anteil', fontsize=15)
+    plt.ylabel('Relative frequency', fontsize=15)
     # rotate the x axis labels
     #plt.xticks(rotation=90)
 
@@ -737,12 +736,13 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
 
     # Extract data for plotting
     labels = list(pn_dict.keys())
+    colors = [amino_acid_to_color[dict_aa_codon(label)] for label in labels]
+    labels, colors = zip(*sorted(zip(labels, colors), key=lambda x: x[1]))
     P_M_equal_B = [pn_dict[label]['P_M==B'] for label in labels]
     P_M_not_equal_B = [pn_dict[label]['P_M!=B'] for label in labels]
     N_M_equal_B = [pn_dict[label]['N_M==B'] for label in labels]
     N_M_not_equal_B = [pn_dict[label]['N_M!=B'] for label in labels]
 
-    colors = [amino_acid_to_color[dict_aa_codon(label)] for label in labels]
 
     # Plotting the stacked bar chart
     plt.figure(figsize=(12, 4))
@@ -758,9 +758,9 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
 
     # Add labels
     plt.xlabel('Codons', fontweight='bold')
-    plt.ylabel('Relativer Anteil', fontweight='bold')
+    plt.ylabel('Relative frequency', fontweight='bold')
     #plt.xticks(r, labels, rotation=45)
-    plt.title(f'Anteile von korrekten (P) und falschen (N) Vorhersagen\ndes {model_name} Modells (M) im Vergleich zur Max CUB Baseline (B) beim Organismus {organism_name}')
+    plt.title(f'Frequencies of correct (P) and false (N) predictions\of {model_name} model (M) in comparison to the Max CUB baseline (B) for organism {organism_name}')
 
     # Add a legend
     plt.legend()
@@ -855,7 +855,7 @@ def plot_accuracies_per_segment(accuracies, elements, title):
     ax1.set_xlabel("Segment")
     ax1.set_ylim(0, elements[0] * 1.05)
     ax1.set_xlim(-1, len(elements))
-    ax1.set_ylabel("Anzahl Elemente pro Segment")
+    ax1.set_ylabel("Number of elements per segment")
     ax1.bar(range(len(elements)), elements)
 
     ax2 = ax1.twinx()
@@ -894,11 +894,11 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     # Adding labels and title
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
-    plt.title(f'Training Accuracies over Epochs for the best {model_name} model per organism')
+    plt.title(f'Accuracies on validation data over epochs for the best {model_name} model per organism')
     plt.legend()
 
     max_epochs = max(len(acc) for acc in training_accuracies.values())
-    plt.xticks(range(1, max_epochs + 1, epoch_distance))
+    plt.xticks(range(0, max_epochs + 1, epoch_distance))
 
     # Display the plot
     plt.show()
