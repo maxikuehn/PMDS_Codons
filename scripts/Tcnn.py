@@ -8,6 +8,9 @@ import time
 from itertools import product
 import json
 import os
+import copy
+import random
+import sys
 
 import ml_helper as mlh
 import Classifier
@@ -92,6 +95,9 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
     ------
     Returns the training losses and accuracies
     """
+    best_model = None
+    best_acc = -1
+    best_epoch = -1
 
     epoch = 0
     still_training = True
@@ -170,25 +176,41 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
         trainings_accuracies.append(epoch_acc)
         valid_avg_accs.append(epoch_valid_acc)
 
-        if epochs is not None:
-            if verbose:
-                print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
-            if epoch == epochs:
-                still_training = False
-        else:
-            if verbose:
-                print(f'Epoch [{epoch+1}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
-            # if no improvment in last 3 epochs compared to last 7 epochs, stop training
-            if len(valid_avg_accs) > (stop_area - 1):
-                avg_last_prog = np.mean(valid_avg_accs[-3:])
-                avg_last_area = np.mean(valid_avg_accs[-stop_area:])
-                if avg_last_prog < avg_last_area:
-                    still_training = False
-                    if verbose:
-                        print(f"Early stopping due to no progress in last 3 epochs compared to last 7 epochs. Last 3: {avg_last_prog}, Last 7: {avg_last_area}")
+        if epoch_valid_acc > best_acc:
+            best_model = copy.deepcopy(model)
+            best_acc = epoch_valid_acc
+            best_epoch = epoch + 1
+
+        if verbose:
+            print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
 
         epoch += 1
-    return trainings_losses, trainings_accuracies, valid_avg_accs
+        if epoch >= epochs:
+            still_training = False
+            if verbose:
+                print("Training completed.")
+        # if epochs is not None:
+        #     if verbose:
+        #         print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
+        #     if epoch == epochs:
+        #         still_training = False
+        # else:
+        #     if verbose:
+        #         print(f'Epoch [{epoch+1}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
+            # if no improvment in last 3 epochs compared to last 7 epochs, stop training
+            # if len(valid_avg_accs) > (stop_area - 1):
+            #     avg_last_prog = np.mean(valid_avg_accs[-3:])
+            #     avg_last_area = np.mean(valid_avg_accs[-stop_area:])
+            #     if avg_last_prog < avg_last_area:
+            #         still_training = False
+            #         if verbose:
+            #             print(f"Early stopping due to no progress in last 3 epochs compared to last 7 epochs. Last 3: {avg_last_prog}, Last 7: {avg_last_area}")
+
+    model = best_model
+    if verbose:
+        print('Best Validaton Accuracy:', best_acc)
+        
+    return trainings_losses, trainings_accuracies, valid_avg_accs, best_epoch
 
 def evaluate_model(model, device:str, test_loader: DataLoader,  pad_str: str= '___', codon_names=True) -> list:
     """
@@ -406,7 +428,96 @@ class Tcn_Classifier(Classifier.Classifier):
     
 
 if __name__ == "__main__":
-            
+    # cd scripts
+
+    # nohup python3 scripts/Tcnn.py &
+    # tail -f nohup.out
+    # jobs -l
+
+    # TODO: change number of blocks in grid serarch results human to 5 from 7
+
+    data_path = './data'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    SEED = 42
+    def set_seed(SEED=SEED):
+        random.seed(SEED)
+        np.random.seed(SEED)
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed(SEED)
+    set_seed()
+
+    # Data preparation
+    organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
+    organism = organisms[2]
+    pad_int = mlh.codons.index('___')
+    #"Homo.Sapiens"  "Drosophila.Melanogaster"  "E.Coli"
+    min_length = None
+    max_length = 500
+    one_hot = True
+    cut_data = False
+
+    SPEEDS_ADDED = False
+    BATCH_SIZE = 32
+
+    print('Start loading data for organism: ', organism)
+    train_dataset = mlh.CodonDataset(organism, "train", min_length, max_length, cut_data=True, one_hot_aa=one_hot, data_path=data_path, device=device)
+    print(f"Länge train_dataset: {len(train_dataset)}")
+    valid_dataset = mlh.CodonDataset(organism, "valid", min_length, max_length, cut_data=True, one_hot_aa=one_hot, data_path=data_path, device=device)
+    print(f"Länge valid_dataset: {len(valid_dataset)}")
+
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+    path_params = f'./ml_models/{organism}/tcnn_grid_search_results.json'
+    best_params = load_best_params(organism, path_params)
+    if best_params is not None:
+        print(f"Best parameters: num_filters: {best_params[0]}, filter_size: {best_params[1]}, dropout_factor: {best_params[2]}, num_blocks: {best_params[3]}, parallel_layer: {best_params[4]}, learing_rate: {best_params[5]}")
+
+    # Hyperparameters
+    num_features = len(mlh.amino_acids)
+    num_classes = len(mlh.codons)  # number of codons (output classes)
+    NUM_EPOCHS = 200
+
+    num_filters = 128 #64
+    filter_size = 5#3  # NOTE: filter size must be unequal like: 3,5,9,...
+    dropout_factor = 0.08 #0.08 #0.005
+    num_blocks = 5#2
+    parallel_layer = True
+    learing_rate = 0.001 # 0.001
+
+    if best_params is not None:
+        num_filters = best_params[0]
+        filter_size = best_params[1]
+        dropout_factor = best_params[2]
+        num_blocks = best_params[3]
+        parallel_layer = best_params[4]
+        learing_rate = best_params[5]
+
+
+    # Model
+    tcnModel = TemporalConvNet(num_features, num_classes, num_filters, filter_size, 
+                            dropout_factor, num_blocks, parallel_layer)
+    print(tcnModel)
+
+    #criterion = nn.CrossEntropyLoss(ignore_index=64)
+    criterion = nn.CrossEntropyLoss(ignore_index=pad_int)
+    optimizer = optim.Adam(tcnModel.parameters(), lr=learing_rate)
+
+    trainings_losses, trainings_accuracies, valid_accs, best_epoch_idx = train(tcnModel, train_loader, valid_loader, NUM_EPOCHS, optimizer, criterion, device=device)
+
+
+    json_data = {'organism': organism, 'training_valid_accs': valid_accs, 'best_epoch_idx': best_epoch_idx}
+
+    # Save training valid accuracies
+    acc_path = data_path + f'/{organism}/training_valid_accs.json'
+
+    with open(acc_path, 'w') as file:
+        json.dump(json_data, file)
+
+    print('Vaild Accs in training saved in:', acc_path)
+
+    mlh.save_model(tcnModel, f'tcn_valid_acc_{round(round(valid_accs[-1],2) * 100)}', organism, dir_path='./ml_models')
+    """        
     organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
     organisms = [organisms[0]]
 
@@ -435,3 +546,4 @@ if __name__ == "__main__":
     
         acc = classifier.calc_accuracy(labels, preds, pad='')
         print(f"Organismus {org} with a Accuracy: {round(acc, 3)}")
+        """

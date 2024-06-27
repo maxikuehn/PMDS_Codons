@@ -8,6 +8,8 @@ ml_models/Homo.Sapiens/not_relevant
 rnn_nohup.out
 rnn_nohup.err
 
+nohup.out
+
 runs/
 
 # Byte-compiled / optimized / DLL files

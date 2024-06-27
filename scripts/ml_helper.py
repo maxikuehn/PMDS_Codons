@@ -273,16 +273,18 @@ class CodonDataset(Dataset):
         return aa_sequence, codon_sequence
 
 
-def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str = None, not_relevant=False):
+def save_model(model: nn.Module,  model_name: str, organism: str, appendix: str = None, not_relevant=False, dir_path: str=None):
+    if dir_path is None:
+        dir_path = '../ml_models'
     # timestamp
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y%m%d%H%M%S")
 
     appendix = "_" + appendix if appendix is not None else ""
 
-    path = f"../ml_models/{organism}/{timestamp}_{model_name}{appendix}.pt"
+    path = f"{dir_path}/{organism}/{timestamp}_{model_name}{appendix}.pt"
     if not_relevant:
-        path = f"../ml_models/{organism}/not_relevant/{timestamp}_{model_name}{appendix}.pt"
+        path = f"{dir_path}/{organism}/not_relevant/{timestamp}_{model_name}{appendix}.pt"
 
     # save model in ml_models in a single file
     torch.save(model, path)
