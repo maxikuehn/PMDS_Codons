@@ -303,7 +303,7 @@ def train_model(model, num_epochs, loss_ignore_pad=True, learning_rate=0.0005, v
     return avg_eval_loss, accuracy, all_accuracies, epoch_num, best_model_state
 
 
-def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos_enc, num_epochs, print_epochs, not_relevant=False, validation_stop=True, start_epoch=0, current_best_model_state=None, existing_model=None):
+def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos_enc, num_epochs, print_epochs, learning_rate=0.0005, not_relevant=False, validation_stop=True, start_epoch=0, current_best_model_state=None, existing_model=None):
     set_seed()
     
     if existing_model:
@@ -318,7 +318,7 @@ def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos
         ).to(device)
 
     print(f"----- Start Training: {embed_dim} emb, {num_encoder_layers} layers, {num_heads} heads, {dropout} dropout, positional encoding: {pos_enc}, {num_epochs} epochs -----")
-    last_loss, accuracy, all_accuracies, epoch_num, best_model_state = train_model(model, num_epochs, print_epochs=print_epochs, validation_stop=validation_stop, start_epoch=start_epoch, current_best_model_state=current_best_model_state)
+    last_loss, accuracy, all_accuracies, epoch_num, best_model_state = train_model(model, num_epochs, print_epochs=print_epochs, learning_rate=learning_rate, validation_stop=validation_stop, start_epoch=start_epoch, current_best_model_state=current_best_model_state)
 
     saved = False
     if last_loss >= 2:
@@ -330,7 +330,7 @@ def train_parameter_model(embed_dim, num_encoder_layers, num_heads, dropout, pos
     return saved, accuracy, all_accuracies, best_model_state
 
 
-def hyper_parameter_training(embed_dims, num_encoder_layers, num_heads, dropouts, pos_enc, epochs=50, print_epochs=True, validation_stop=True, start_epoch=0, current_best_model_state=None, existing_model=None):
+def hyper_parameter_training(embed_dims, num_encoder_layers, num_heads, dropouts, pos_enc, epochs=50, learning_rate=0.0005, print_epochs=True, validation_stop=True, start_epoch=0, current_best_model_state=None, existing_model=None):
     not_saved = []
     accuracies = {}
     all_accuracies_dict = {}
@@ -340,7 +340,7 @@ def hyper_parameter_training(embed_dims, num_encoder_layers, num_heads, dropouts
                 for DROPOUT in dropouts:
                     for POS_ENC in pos_enc:
                         model_name = f'encoder_{EMBED_DIM}em_{NUM_ENCODER_LAYERS}l_{NUM_HEADS}h{"_posenc" if POS_ENC else ""}_{str(DROPOUT).replace(".","")}dr_{epochs}ep'
-                        saved, accuracy, all_accuracies, best_model_state = train_parameter_model(EMBED_DIM, NUM_ENCODER_LAYERS, NUM_HEADS, DROPOUT, POS_ENC, epochs, print_epochs, not_relevant=True, validation_stop=validation_stop, start_epoch=start_epoch, current_best_model_state=current_best_model_state, existing_model=existing_model)
+                        saved, accuracy, all_accuracies, best_model_state = train_parameter_model(EMBED_DIM, NUM_ENCODER_LAYERS, NUM_HEADS, DROPOUT, POS_ENC, epochs, print_epochs, learning_rate=learning_rate, not_relevant=True, validation_stop=validation_stop, start_epoch=start_epoch, current_best_model_state=current_best_model_state, existing_model=existing_model)
                         accuracies[model_name] = accuracy
                         all_accuracies_dict[model_name] = all_accuracies
                         if not saved:

@@ -874,14 +874,14 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     Accuracies dict needs to be of following form:
     training_accuracies = {
         "E.Coli": [0.5213, 0.5473, 0.5563, ...],
-        "Fruchtfliege": ...,
-        "Mensch": ...
+        "Drosophila.Melanogaster": ...,
+        "Homo.Sapiens": ...
     }
     '''
     colors = {
         "E.Coli": 'green',
-        "Fruchtfliege": 'blue',
-        "Mensch": 'red'
+        "Drosophila.Melanogaster": 'blue',
+        "Homo.Sapiens": 'red'
     }
 
     # Plotting the training accuracies for each organism
@@ -890,6 +890,13 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     for organism, accuracies in training_accuracies.items():
         epochs = range(1, len(accuracies) + 1)
         plt.plot(epochs, accuracies, label=organism, color=colors[organism])
+
+        # Find the best accuracy and its epoch
+        best_accuracy = max(accuracies)
+        best_epoch = accuracies.index(best_accuracy) + 1
+        
+        # Plot the best accuracy point
+        plt.scatter(best_epoch, best_accuracy, color=colors[organism], marker='o', s=100, label=f'Best accuracy {organism}')
 
     # Adding labels and title
     plt.xlabel('Epoch')
