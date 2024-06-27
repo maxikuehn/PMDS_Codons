@@ -1,3 +1,4 @@
+from collections import defaultdict as ddict
 import time
 
 import numpy as np
@@ -52,7 +53,7 @@ class RNN(nn.Module):
         return torch.zeros(self.batch_size, self.hidden_size, requires_grad=False)
 
 
-def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer, loss_fn: nn.Module, device: torch.device = torch.device("cpu")) -> None:
+def train(model: RNN, data: DataLoader, valid_loader: DataLoader, epochs: int, valid_every_epoch: float, optimizer: optim.Optimizer, loss_fn: nn.Module, device: torch.device = torch.device("cpu")) -> None:
     """
     Trains the model for the specified number of epochs
     Inputs
@@ -63,7 +64,9 @@ def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer,
     optimizer: Optimizer to use for each epoch
     loss_fn: Function to calculate loss
     """
-    train_losses = {}
+    train_losses = ddict(list)
+    accuracies_per_epoch = ddict(list)
+
     model.to(device)
 
     model.train()
@@ -102,14 +105,23 @@ def train(model: RNN, data: DataLoader, epochs: int, optimizer: optim.Optimizer,
 
             epoch_losses.append(loss.detach().item() / input.shape[1])
 
+            # train validation
+            if b > 0 and (b % int(valid_every_epoch * len(data)) == 0 or b == len(data) - 1):
+                _, _, acc = evaluate(
+                    model, valid_loader, device=device)
+                accuracies_per_epoch[epoch].append(acc)
+                train_losses[epoch].append(float(np.mean(epoch_losses)))
+                print(f"vacc: {acc:>7.4f}")
+
+            # progess logging
             if b > 0 and b % 200 == 0:
                 current = b * input.shape[0]
                 print_loss = np.mean(epoch_losses)
                 print(f"loss: {print_loss:>7.4f}  [{current:>5d}/{len(data.dataset):>5d}]")
 
-        train_losses[epoch] = torch.tensor(epoch_losses).mean()
-        print(f'=> epoch: {epoch + 1}/{epochs}, loss: {train_losses[epoch]:.4f}, epoch time: {time.time() - epoch_start_time:.2f}s')
+        print(f'=> epoch: {epoch + 1}/{epochs}, loss: {torch.tensor(epoch_losses).mean().item():.4f}, epoch time: {time.time() - epoch_start_time:.2f}s')
     print(f"=> Finished training in {time.time() - start_time:.2f}s")
+    return train_losses, accuracies_per_epoch
 
 
 def predict(model: RNN, input, device=torch.device("cpu")):

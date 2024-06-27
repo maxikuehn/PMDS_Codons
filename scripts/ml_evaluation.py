@@ -136,33 +136,40 @@ def compute_accuracy(predictions: list, labels: list) -> float:
     acc = accuracy_score(labels, predictions)
     return acc
 
-def plot_training(trainings_losses: list, trainings_accuracies: list, valid_accs: list = None) -> plt.Figure:
+
+def plot_training(training_losses: list, training_accs: list = None, valid_accs: list = None, part_of_epoch: float = None) -> plt.Figure:
     """
     This function plots the training loss and accuracy.
     ------
-    trainings_losses: list with the training losses (1d list)
-    trainings_accuracies: list with the training accuracies (1d list)
+    training_losses: list with the training losses (1d list)
+    training_accs: list with the training accuracies (1d list), optional
     valid_accs: list with the validation accuracies (1d list), optional
     ------
     returns: plot with the training loss and accuracy
     """
     plt.figure(figsize=(15, 5))
 
+    y_data = range(1, len(training_losses) + 1) if part_of_epoch is None else [
+        i * part_of_epoch for i in range(1, len(training_losses) + 1)]
+
+    print(y_data)
+
     # Plot training loss
-    plt.subplot(1, 2, 1)
-    plt.plot(trainings_losses, label='Training Loss')
+    ax = plt.subplot(1, 2, 1)
+    ax.plot(y_data, training_losses, label='Training Loss')
     plt.title('Training Loss', fontsize=20)
-    plt.xlabel('Epoch', fontsize=15)
+    plt.xlabel("Epoch", fontsize=15)
     plt.ylabel('Loss', fontsize=15)
     plt.legend()
 
     # Plot training and validation accuracy
     plt.subplot(1, 2, 2)
-    plt.plot(trainings_accuracies, label='Training Accuracy')
+    if training_accs is not None:
+        plt.plot(y_data, training_accs, label='Training Accuracy')
     if valid_accs is not None:
-        plt.plot(valid_accs, label='Validation Accuracy')
+        plt.plot(y_data, valid_accs, label='Validation Accuracy')
     plt.title('Training Accuracy', fontsize=20)
-    plt.xlabel('Epoch', fontsize=15)
+    plt.xlabel("Epoch", fontsize=15)
     plt.ylabel('Accuracy', fontsize=15)
     plt.legend()
 
@@ -874,14 +881,19 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     Accuracies dict needs to be of following form:
     training_accuracies = {
         "E.Coli": [0.5213, 0.5473, 0.5563, ...],
-        "Drosophila.Melanogaster": ...,
-        "Homo.Sapiens": ...
+        "Fruchtfliege": ...,
+        "Mensch": ...
     }
     '''
+    organism_to_name = {
+        "E.Coli": 'E.Coli',
+        "Fruchtfliege": 'Drosophila.Melanogaster',
+        "Mensch": 'Homo.Sapiens'
+    }
     colors = {
         "E.Coli": 'green',
-        "Drosophila.Melanogaster": 'blue',
-        "Homo.Sapiens": 'red'
+        "Fruchtfliege": 'blue',
+        "Mensch": 'red'
     }
 
     # Plotting the training accuracies for each organism
@@ -889,14 +901,14 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
 
     for organism, accuracies in training_accuracies.items():
         epochs = range(1, len(accuracies) + 1)
-        plt.plot(epochs, accuracies, label=organism, color=colors[organism])
+        plt.plot(epochs, accuracies, label=organism_to_name[organism], color=colors[organism])
 
         # Find the best accuracy and its epoch
         best_accuracy = max(accuracies)
         best_epoch = accuracies.index(best_accuracy) + 1
         
         # Plot the best accuracy point
-        plt.scatter(best_epoch, best_accuracy, color=colors[organism], marker='o', s=100, label=f'Best accuracy {organism}')
+        plt.scatter(best_epoch, best_accuracy, color=colors[organism], marker='o', s=100, label=f'Best accuracy {organism_to_name[organism]}')
 
     # Adding labels and title
     plt.xlabel('Epoch')
