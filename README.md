@@ -1,7 +1,31 @@
 # Optimale Synonyme Codons
 
 ## Installation
-...
+
+### Requirements
+- Python 3.8 or higher
+- pip
+
+### Setup
+1. Clone the repository
+2. Create a virtual environment
+    ```bash
+    python -m venv .venv
+    ```
+3. Activate the virtual environment
+    ```bash
+    source .venv/bin/activate
+    ```
+4. Install the requirements
+    ```bash
+    pip install -r requirements.txt
+    ``` 
+5. to use Cuda, install pytorch with the following command
+    ```bash
+    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    ```
+
+[TODO] prüfen, ob das so klappt
 
 ## Folder Structure
 ...
