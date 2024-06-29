@@ -1,12 +1,12 @@
-python-dotenv
-torch
-torchvision
-torchaudio
-numpy
-pandas
-biopython
-scikit-learn
-seaborn
-matplotlib
-ipykernel
-bertviz
+torch~=2.3.1
+torchvision~=0.18.1
+torchaudio~=2.3.1
+numpy ~=1.26.4
+pandas~=2.2.2
+biopython~=1.83
+scikit-learn~=1.5.0
+seaborn~=0.13.2
+matplotlib~=3.9.0
+ipykernel~=6.29.4
+bertviz~=1.4.0
+tensorboard
