@@ -31,6 +31,8 @@
 ...
 
 ### Notebooks
+- 00_Using_Classifiers
+    - Notebook for applying the best classifiers from each model architecture to new data
 - 01_Data_Aggregation_and_Preparation -> Floris
     - Data aggregation: How was the data gathered?
     - Data preparation: How was the data cleaned and split for training and testing purposes
