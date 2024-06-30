@@ -320,7 +320,8 @@ def hyperparam_search(organism:str, train_loader: DataLoader, valid_loader: Data
 
         classifier = Tcn_Classifier(tcnModel)
         predictions = classifier.predict_codons(test_loader, codon_names=False)
-        
+        predictions = classifier.pad_and_convert_seq(predictions)
+
         acc = classifier.calc_accuracy(labels, predictions, pad='')
         results.append([nf, fs, df, nb, pl, lr, acc])
 

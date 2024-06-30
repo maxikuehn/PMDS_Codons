@@ -832,7 +832,7 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
         bars.append(ax.bar(x + i * bar_width - (len(values_list) - 1) * bar_width / 2, values, bar_width, label=bar_labels[i], color=colors[i]))
 
     # Adding labels and title
-    ax.set_xlabel("Organismus")
+    ax.set_xlabel("Organism")
     ax.set_ylabel("Accuracy")
     ax.set_title(title)
     ax.set_xticks(x)
@@ -886,9 +886,9 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     }
     '''
     organism_to_name = {
-        "E.Coli": 'E.Coli',
-        "Fruchtfliege": 'Drosophila.Melanogaster',
-        "Mensch": 'Homo.Sapiens'
+        "E.Coli": 'E.C.',
+        "Fruchtfliege": 'D.M.',
+        "Mensch": 'H.S.'
     }
     colors = {
         "E.Coli": 'green',
@@ -905,6 +905,7 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
 
         # Find the best accuracy and its epoch
         best_accuracy = max(accuracies)
+        print(f"{organism} best accuracy: {best_accuracy}")
         best_epoch = accuracies.index(best_accuracy) + 1
         
         # Plot the best accuracy point
@@ -913,8 +914,11 @@ def plot_training_accuracies(training_accuracies, model_name, epoch_distance=1):
     # Adding labels and title
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
-    plt.title(f'Accuracies on validation data over epochs for the best {model_name} model per organism')
-    plt.legend()
+    plt.title(f'Accuracies on validation data over epochs for the best {model_name} model per organism', fontsize=20)
+    plt.legend(loc='lower right')
+
+    # Set the y-axis range
+    plt.yticks(np.arange(0.45, 0.58, 0.01))
 
     max_epochs = max(len(acc) for acc in training_accuracies.values())
     plt.xticks(range(0, max_epochs + 1, epoch_distance))

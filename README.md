@@ -48,15 +48,16 @@
     - Correlation between neighbouring amino acids
     - ...
 - 06: RNN -> Maxi
-    - 061_RNN_Training
-    - 062_RNN_Testing
+    - 06_1_RNN_Training
+    - 06_2_RNN_Testing
 - 07: TCNN -> Felix
-    - 071_TCNN_Training
-    - 072_TCNN_Testing
+    - 07_1_TCNN_Training
+    - 07_2_TCNN_Testing
 - 08: Encoder-only Transformer -> Insa
-    - 081_Encoder_Training
-    - 082_Encoder_Testing
+    - 08_1_Encoder_Training
+    - 08_2_Encoder_Testing
 - 09: Accuracy Results Overview -> Insa
+    - Training validation accuracies per model (RNN, Encoder, TCNN)
     - Accuracy per (best) Model per Organism in comparison to baseline 
         - Index-based CUB vs Baseline Max CUB
         - RNN vs Baseline Max CUB
