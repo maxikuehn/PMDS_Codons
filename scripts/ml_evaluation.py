@@ -854,6 +854,90 @@ def plot_accuracies_comparison(accuracies, bar_labels, title, value_decimals=3):
     plt.show()
 
 
+def plot_accuracies_comparison_shuffled(accuracies, bar_labels, title, value_decimals=3):
+    '''
+    This function plots the accuracies of different organisms for each classifier.
+    The accuracies must be given in the following format:
+    accuracies = {
+        "E.Coli": {
+            "Max CUB": (0.5186, 0.4800),
+            "RNN": (0.5256, 0.4900),
+            "Encoder": (0.5270, 0.4950),
+            "TCNN": (0.5552, 0.5000)
+    }, ...
+    -------------------------
+    accuracies: accuracies for each classifier with tuple (test_accuracy, shuffled_test_accuracy)
+    bar_labels: names for the classifiers in the bar plot
+    title: title for the plot
+    value_decimals: on which number of decimals to round the value texts in the plot
+    '''
+    colors = ['#6497b1','#005b96','#03396c','#011f4b']
+
+    # Prepare data for plotting
+    organisms = list(accuracies.keys())
+    classifier_labels = accuracies[organisms[0]].keys()
+    test_values_list = []
+    shuffled_values_list = []
+    for label in classifier_labels:
+        test_labels_list = []
+        shuffled_labels_list = []
+        for org in organisms:
+            if label in accuracies[org]:
+                test_labels_list.append(accuracies[org][label][0])
+                shuffled_labels_list.append(accuracies[org][label][1])
+            else:
+                test_labels_list.append(0)
+                shuffled_labels_list.append(0)
+        test_values_list.append(test_labels_list)
+        shuffled_values_list.append(shuffled_labels_list)
+
+    # Number of bars
+    x = np.arange(len(organisms))
+
+    # Create the plot
+    plot_length = 6
+    if len(bar_labels) > 3:
+        plot_length = 9
+    fig, ax = plt.subplots(figsize=(plot_length, 4))
+
+    # Plotting the bars
+    bars = []
+    bars_shuffled = []
+    ylim=(0, 1)
+    bar_width = 0.4 / len(classifier_labels) * 2
+    for i, (test_values, shuffled_values) in enumerate(zip(test_values_list, shuffled_values_list)):
+        bar_bottoms = np.add(shuffled_values, test_values).tolist()
+        bars_shuffled.append(ax.bar(x + i * bar_width - (len(test_values_list) - 1) * bar_width / 2, shuffled_values, bar_width, label=f"{bar_labels[i]}", color=colors[i]))
+        bars.append(ax.bar(x + i * bar_width - (len(test_values_list) - 1) * bar_width / 2, test_values, bar_width, color=colors[i], alpha=0.7))
+
+    # Adding labels and title
+    ax.set_xlabel("Organism")
+    ax.set_ylabel("Accuracy")
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(organisms)
+    ax.set_ylim(*ylim)
+    ax.legend(loc='upper left')
+
+    # Adding value labels on top of the bars
+    def add_value_labels(bars, shuffled=False):
+        if shuffled:
+            bars = bars[1:]
+        for bar_group in bars:
+            for bar in bar_group:
+                height = bar.get_height()
+                if height != 0:
+                    if not shuffled:
+                        ax.text(bar.get_x() + bar.get_width() / 2.0, height, f'{round(height, value_decimals)}', ha='center', va='bottom')
+                    else:
+                        ax.text(bar.get_x() + bar.get_width() / 2.0, height-0.06, f'{round(height, value_decimals)}', ha='center', va='bottom', color="white", alpha=0.7)
+    add_value_labels(bars)
+    add_value_labels(bars_shuffled, True)
+
+    # Display the plot
+    plt.show()
+
+
 def plot_accuracies_per_segment(accuracies, elements, title):
     # Create the plot
     fig, ax1 = plt.subplots(figsize=(15, 4))
