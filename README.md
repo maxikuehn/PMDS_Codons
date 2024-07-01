@@ -72,8 +72,8 @@
     - [06_1_RNN_Training](notebooks/06_1_RNN_Training.ipynb)
     - [06_2_RNN_Testing](notebooks/06_2_RNN_Testing.ipynb)
 - 07: TCNN
-    - [07_1_TCNN_Training](notebooks/07_1_TCNN_Training.ipynb)
-    - [07_2_TCNN_Testing](notebooks/07_2_TCNN_Testing.ipynb)
+    - [07_1_TCN_Training](notebooks/07_1_TCN_Training.ipynb)
+    - [07_2_TCN_Testing](notebooks/07_2_TCN_Testing.ipynb)
 - 08: Encoder-only Transformer
     - [08_1_Encoder_Training](notebooks/08_1_Encoder_Training.ipynb)
     - [08_2_Encoder_Testing](notebooks/08_2_Encoder_Testing.ipynb)
