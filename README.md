@@ -18,8 +18,8 @@
 ## Installation
 
 ### Requirements
-- Python 3.8 or higher
-- pip
+- **Python 3.8 or higher** (Python 3.12 is recommended). More information on how to install Python can be found [here](https://www.python.org/downloads/).
+- **pip** Python package installer (usually included in Python installations)
 
 ### Setup
 1. Clone the repository
@@ -121,3 +121,10 @@
 - [Chemical Property](scripts/chemicalProperty.py): Chemical property analysis of codons
 - change Table
 - [WIP] [secondary structure](scripts/secondary_structur.py): Exploration of secondary structure as additional feature
+
+
+### Data
+Contains the cleaned sequence data for 3 organisms (E.Coli, D.Melanogaster, H.Sapiens). The data is split in training, testing and validation data and then saved as a pickle file.
+Also all the splits are saved in a shuffled version.
+
+The data folder also contains various files, which track the model training progress and the model performance.
