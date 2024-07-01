@@ -99,7 +99,7 @@ def addRuns(matrix,seq:str,mapping_dict:dict,stepWidth:int):
         matrix[i,j]+=1   
     return matrix
 
-def calcTransitionRatio(matrix):
+def calcTransitionRatio(matrix) -> np.ndarray[np.float64]:
     all_transitions = np.sum(matrix[1:,1:])
     soloRatio = np.arange(len(matrix)-1)
     #berechne relative häufigkeit der einzelnen vorkommen
@@ -117,32 +117,50 @@ def calcTransitionRatio(matrix):
     return implicitRatio
 
 
-def kindaBLOSUMcodons(sequences:list):
+def kindaBLOSUMcodons(sequences:list) -> None:
     matrix,codon_mapping_dict = setupCodonMatrix()
     codonList = [str(x) for x in codon_mapping_dict.values()]
     for sequence in sequences:
         matrix = addRuns(matrix,sequence,codon_mapping_dict,3)
     transitionRatios = calcTransitionRatio(matrix)
-    fig,ax = plt.subplots()
-    fig.set_size_inches(12,12)
-    sns.heatmap(transitionRatios[1:,1:],annot=False,cbar=True,cmap='mako',linewidths=.05,xticklabels=codonList,yticklabels=codonList)
-    ax.tick_params(labelsize=5)
-    ax.set_title("Nachbarschafts Abhängigkeit der Codons")
-    plt.show()
+    plot_blossum_map(transitionRatios,codonList,line_width=.5)
 
-def kindaBLOSUMaminos(sequences:list,plot_title:str):
+def kindaBLOSUMaminos(sequences:list,plot_title:str) -> None:
     matrix,amino_mapping_dict = setupAminoMatrix()
     aminoList = [str(x) for x in amino_mapping_dict.values()]
     for sequence in sequences:
         matrix = addRuns(matrix,sequence,amino_mapping_dict,1)   
     transtitionRatios = calcTransitionRatio(matrix)
-    fig,ax = plt.subplots()    
-    sns.heatmap(transtitionRatios[1:,1:],annot=False,cbar=True,cmap='mako',linewidths=.5,xticklabels=aminoList,yticklabels=aminoList)
+    plot_blossum_map(transtitionRatios,aminoList,line_width=.05,plot_title=plot_title)
+
+def plot_blossum_map(transitionRatios,codonList,line_width,plot_title="Nachbarschafts Abhängigkeit der Codons") -> None:
+    fig,ax = plt.subplots()
+    fig.set_size_inches(12,12)
+    sns.heatmap(transitionRatios[1:,1:],annot=False,cbar=True,cmap='mako',linewidths=line_width,xticklabels=codonList,yticklabels=codonList)
+    ax.tick_params(labelsize=5)
     ax.set_title(plot_title)
     plt.show()
 
+def plot_chemical_properties(chemical_properties_aa:pd.DataFrame) -> None:
+    fig,axs = plt.subplots(ncols=2,nrows=2,figsize=(21,14))
+    fig.set_size_inches(10,5)
+    fig.suptitle('Chemische Eigenschaften Alanine E.Coli')
+    axs[0,0].pie(x=chemical_properties_aa['CODON'].value_counts().values,labels=chemical_properties_aa['CODON'].value_counts().index,autopct='%1.01f%%')
+    axs[0,0].set_title('CUB Alanine E.Coli')
+    axs[0,0].legend(loc=(1.05,0))
+    axs[0,1].pie(x=chemical_properties_aa['HYDROGEN'].value_counts().values,labels=chemical_properties_aa.value_counts('HYDROGEN').index,autopct="%1.01f%%")
+    axs[0,1].set_title('Wasserstoffbrücken Codons Alanine')
+    axs[0,1].legend(loc=(1.05,0))
+    axs[1,0].pie(x=chemical_properties_aa['PURI_PYRI'].value_counts().values,labels=chemical_properties_aa['PURI_PYRI'].value_counts().index,autopct="%1.01f%%")
+    axs[1,0].set_title('Verteilung Ringstruktur der Basen')
+    axs[1,0].legend(loc=(1.05,0))
+    axs[1,1].pie(x=chemical_properties_aa['KETO_AMINO'].value_counts().values,labels=chemical_properties_aa['KETO_AMINO'].value_counts().index,autopct="%1.01f%%")
+    axs[1,1].set_title('Gruppenverteilung der Codons')
+    axs[1,1].legend(loc=(1.05,0))
+    plt.plot()
+    
 
-PATH = "data/E.Coli/cleanedData.pkl"
+
 puriPyriDict = {'C':'Y','G':'P','A':'P','T':'Y'}
 hydrogenDict = {'G':3,'C':3,'A':2,'T':2}
 ketoAminoDict = {'A':'A','C':'A','T':'K','G':'K'}
@@ -167,10 +185,3 @@ aminoDecoding = {'M': ['ATG'],
  'C': ['TGC', 'TGT'],
  'Y': ['TAC', 'TAT'],
  'W': ['TGG']}
-
-# df = pd.read_pickle(PATH)
-# codon_sequences = df['sequence'].tolist()
-# kindaBLOSUMcodons(codon_sequences)
-# amino_sequences = df['translation'].apply(lambda x: x.seq).tolist()
-# kindaBLOSUMaminos(amino_sequences,'E.Coli')
-# scoreByChemProp(df,aminoDecoding['I'],True)

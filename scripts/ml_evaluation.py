@@ -767,7 +767,7 @@ def plot_pn_dict(pn_dict, model_name, organism_name):
     plt.xlabel('Codons', fontweight='bold')
     plt.ylabel('Relative frequency', fontweight='bold')
     #plt.xticks(r, labels, rotation=45)
-    plt.title(f'Frequencies of correct (P) and false (N) predictions\of {model_name} model (M) in comparison to the Max CUB baseline (B) for organism {organism_name}')
+    plt.title(f'Frequencies of correct (P) and false (N) predictions of {model_name} model (M) in comparison to the Max CUB baseline (B) for organism {organism_name}')
 
     # Add a legend
     plt.legend()
