@@ -48,7 +48,7 @@
     - Classifier based on results of this analysis (Index based CUB)
 - 05_Other_Statistical_Analysis_Approaches -> Nils, Floris
     - Correlation between neighbouring amino acids
-    - ...
+    - Amino acid analysis based of chemical properties of codons
 - 06: RNN -> Maxi
     - 06_1_RNN_Training
     - 06_2_RNN_Testing
