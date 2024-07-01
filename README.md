@@ -87,21 +87,12 @@
     - All accuracies in one diagram
         - Max CUB, Index-based Max CUB, RNN, TCNN, Transformer
 
-<!-- #### Testing Notebooks Content
-Per Organism:
-- Index-based Segment Accuracy
-- Confusion Matrix (Codons)
-- Confusion Matrix (Amino acids)
-- Codon Usage Bias
-- Accuracy per Codon
-- Relative Prediction Frequency per Codon
-- Comparison Max CUB with Model Diagrams -->
-
 
 ### Scripts
 - Data Aggregation
     - [data loading](scripts/clean_and_pickle.py): Load Fasta files, check for corrupted sequences and save cleaned data
     - [data splitting](scripts/data_splitter.py): Data splitting for training, testing and validation
+    - [codon usage bias](scripts/usage_bias_and_pickle.py): Calculation of Codon Usage Bias (CUB)
 - [ML helper](scripts/ml_helper.py): Helper functions for training the machine learning models
 - [ML evaluation](scripts/ml_evaluation.py): Evaluation functions for the machine learning models
 - Files with classifier implementations for each model architecture
@@ -109,11 +100,11 @@ Per Organism:
     - [Baseline](scripts/Baseline_classifiers.py)
     - [RNN](scripts/rnn.py)
     - [TCN](scripts/Tcn.py)
-    - [Encoder](scripts/encoder.py)
+    - [Encoder](scripts/encoder.py) & [Modified Pytorch Encoder](scripts/custom_transformer_encoder.py) (can output Attention weights)
     - [Index Classifier](scripts/index_classifier.py)
 - [Chemical Property](scripts/chemicalProperty.py): Chemical property analysis of codons
+- change Table
+- [WIP] [secondary structure](scripts/secondary_structur.py): Exploration of secondary structure as additional feature
+
 
 ### Data
-
-
-### Machine Learning Models
