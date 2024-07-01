@@ -99,7 +99,19 @@ Per Organism:
 
 
 ### Scripts
-
+- Data Aggregation
+    - [data loading](scripts/clean_and_pickle.py): Load Fasta files, check for corrupted sequences and save cleaned data
+    - [data splitting](scripts/data_splitter.py): Data splitting for training, testing and validation
+- [ML helper](scripts/ml_helper.py): Helper functions for training the machine learning models
+- [ML evaluation](scripts/ml_evaluation.py): Evaluation functions for the machine learning models
+- Files with classifier implementations for each model architecture
+    - [Classifier Class](scripts/Classifier.py)
+    - [Baseline](scripts/Baseline_classifiers.py)
+    - [RNN](scripts/rnn.py)
+    - [TCN](scripts/Tcn.py)
+    - [Encoder](scripts/encoder.py)
+    - [Index Classifier](scripts/index_classifier.py)
+- [Chemical Property](scripts/chemicalProperty.py): Chemical property analysis of codons
 
 ### Data
 
