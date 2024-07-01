@@ -16,7 +16,7 @@
     ```bash
     source .venv/bin/activate
     ```
-4. **Windows only:** to use Cuda for NVIDIA GPU acceleration, install pytorch with the following command first
+4. **Windows only:** to use Cuda for NVIDIA GPU acceleration, install pytorch with the following command first (for more information see [Pytorch Installation Guide](https://pytorch.org/get-started/locally/))
     ```bash
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
     ```
