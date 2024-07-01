@@ -408,8 +408,19 @@ class Tcn_Classifier(Classifier.Classifier):
 
 
     def predict_codons(self, aa_sequences: list, device=torch.device("cuda"), codon_names=True):
-        predictions_list = predict_codons(self.model, aa_sequences, device=device, as_codon_names=codon_names)
-        return predictions_list
+        if isinstance(aa_sequences, DataLoader):
+            predictions_list = predict_codons(self.model, aa_sequences, device=device, as_codon_names=codon_names)
+            return predictions_list
+        elif isinstance(aa_sequences, list):
+            predictions = []
+            for input in aa_sequences:
+                input = mlh.aa_to_int_tensor(input, device)
+                input = mlh.aa_int_to_onehot_tensor(input).unsqueeze(0)
+                prediction = predict(self.model, input, device=device)
+                prediction = [mlh.integer_to_codons[p.item()] for p in prediction]
+                predictions.append(prediction)
+
+            return predictions
     
 
 if __name__ == "__main__":
