@@ -18,16 +18,10 @@ def mu_sigma_interval_length():
 
 def preprocess_series(codons:pd.Series,polypeptide:pd.Series,min=0)->tuple[pd.Series,pd.Series]:    
     mu,sigma = mu_sigma_interval_length()
-    upper = mu+sigma
-    #polypeptides_sample = polypeptide[polypeptide.apply(len).between(0,max(polypeptide.apply(len)),'both')]
     polypeptides_sample = polypeptide.apply(lambda x: x.seq)
     polypeptides_sample = polypeptides_sample.reset_index(drop=True)
     codon_sequences = codons.apply(lambda x: [str(x[i:i+3]) for i in range(0,len(x),3)])
     return codon_sequences,polypeptides_sample
-
-"""
-big_dict = {0:{'ATG':12},1:{'GCG':3,'GGG':1,...},...}
-"""
 
 def calc_relative_index_bias(processed_codons:pd.Series):
     big_dict = dict()
@@ -38,7 +32,6 @@ def calc_relative_index_bias(processed_codons:pd.Series):
             if codon not in big_dict[index]:
                 big_dict[index][codon] = 0
             big_dict[index][codon] += 1
-    
     relative_big_dict = {}
     for index in big_dict:
         total = sum(big_dict[index].values())
@@ -65,7 +58,6 @@ def calc_max_bias_per_aa(relative_big_dict):
                 if temp2[aa][1] <= v:
                     temp2[aa] = (k,v)
         relative_big_dict[index] = temp2
-
     return relative_big_dict
 
 def calc_i_cub_per_chunk(processed_codons:pd.Series,chunk_width:int):
@@ -107,15 +99,3 @@ def compare_prediction_with_reality(pred,real):
     
 def calc_prediction_accuraccy(preds,reals):
     return np.mean([compare_prediction_with_reality(element[0],element[1]) for element in zip(preds,reals)])
-
-organism_name = 'Homo.Sapiens'
-read_organism(organism_name)
-processed_codons,processed_polypeptides = preprocess_series(*get_codons_and_polypeptides())
-relative_freq = calc_relative_index_bias(processed_codons)
-stuff = calc_max_bias_per_aa(relative_freq)
-print("Prediction Accuracy for ",organism_name,": ",predict_organism(processed_codons,processed_polypeptides,stuff))
-thresholded = add_treshold_to_bias(relative_freq)
-print("Prediction Accuracy for ",organism_name," after Threshold: ",predict_organism(processed_codons,processed_polypeptides,thresholded))
-# relative_bias = calc_relative_index_bias(processed_codons)
-# codon_with_max_bias = max_bias_per_index(relative_bias)
-# print(predict_organism(processed_codons,processed_polypeptides,codon_with_max_bias))
