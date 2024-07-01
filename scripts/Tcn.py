@@ -141,7 +141,6 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
 
             losses.append(loss.item())
         
-        
         # Validation loop
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():  # Disable gradient computation
@@ -189,23 +188,6 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
             still_training = False
             if verbose:
                 print("Training completed.")
-        # if epochs is not None:
-        #     if verbose:
-        #         print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
-        #     if epoch == epochs:
-        #         still_training = False
-        # else:
-        #     if verbose:
-        #         print(f'Epoch [{epoch+1}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
-            # if no improvment in last 3 epochs compared to last 7 epochs, stop training
-            # if len(valid_avg_accs) > (stop_area - 1):
-            #     avg_last_prog = np.mean(valid_avg_accs[-3:])
-            #     avg_last_area = np.mean(valid_avg_accs[-stop_area:])
-            #     if avg_last_prog < avg_last_area:
-            #         still_training = False
-            #         if verbose:
-            #             print(f"Early stopping due to no progress in last 3 epochs compared to last 7 epochs. Last 3: {avg_last_prog}, Last 7: {avg_last_area}")
-
     model = best_model
     if verbose:
         print('Best Validaton Accuracy:', best_acc)
@@ -347,7 +329,7 @@ def load_best_params(organism:str, path_hyperpara_results:str=None):
     returns: best hyperparameters
     """
     if path_hyperpara_results is None:
-        path = f'../ml_models/{organism}/tcnn_grid_search_results.json'
+        path = f'../ml_models/{organism}/tcn_grid_search_results.json'
     else:
         path = path_hyperpara_results
     
@@ -359,7 +341,6 @@ def load_best_params(organism:str, path_hyperpara_results:str=None):
         results = json.load(f)
 
     best_params = results[np.argmax([r[-1] for r in results])]
-    # cut last element (accuracy)
     best_params = best_params[:-1]
     return best_params
 
@@ -367,6 +348,17 @@ def load_best_params(organism:str, path_hyperpara_results:str=None):
 # ---------------- Wrapping in Classifier Class ----------------
 
 def predict_codons(model, aa_sequence_list, device=torch.device("cuda"), as_codon_names=False):
+    """
+    This function predicts the codons for a list of amino acid sequences
+    ------
+    model: model to use
+    aa_sequence_list: list with the amino acid sequences
+    device: device to use
+    as_codon_names: whether to return the codon names or the integers indicating the codons
+    ------
+    returns: list with the predicted codons
+    """
+
     """ TODO currntly only with dataloader
     if not isinstance(aa_sequence_list, list):
         for idx, seq in enumerate(aa_sequence_list):
@@ -399,19 +391,6 @@ def predict_codons(model, aa_sequence_list, device=torch.device("cuda"), as_codo
                 pred_codons = [c.item() for c in predicted]
             codon_predictions.append(pred_codons)
 
-            """
-            predicted_codons = []
-            for seq_i in range(output.shape[1]):
-                aa_num = batch[seq_i].item()
-                if aa_num == mlh.aminoacids_to_integer['_']:
-                    continue
-                codon_idx = torch.argmax(output[seq_i]).item()
-                codon = mlh.integer_to_codons[codon_idx]
-                predicted_codons.append(codon)
-                codon_predictions.append(predicted_codons)
-            """
-    # codon_predictions = mlh.rebuild_sequences(codon_predictions, cut_bit_map)
-    # assert len(aa_sequence_list) == len(codon_predictions)
     return codon_predictions
 
 
@@ -423,19 +402,16 @@ class Tcn_Classifier(Classifier.Classifier):
 
     def predict_codons(self, aa_sequences: list, device=torch.device("cuda"), codon_names=True):
         predictions_list = predict_codons(self.model, aa_sequences, device=device, as_codon_names=codon_names)
-        #predictions_matrix = self.pad_and_convert_seq(predictions_list)
-        #return predictions_matrix
         return predictions_list
     
 
 if __name__ == "__main__":
+    # If called from command line (suitable for running on a server with nohup)
     # cd scripts
-
-    # nohup python3 scripts/Tcnn.py &
+    # nohup python3 scripts/Tcn.py &
     # tail -f nohup.out
     # jobs -l
 
-    # TODO: change number of blocks in grid serarch results human to 5 from 7
 
     data_path = './data'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -451,7 +427,6 @@ if __name__ == "__main__":
     organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
     organism = organisms[2]
     pad_int = mlh.codons.index('___')
-    #"Homo.Sapiens"  "Drosophila.Melanogaster"  "E.Coli"
     min_length = None
     max_length = 500
     one_hot = True
@@ -468,23 +443,24 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
-
-    path_params = f'./ml_models/{organism}/tcnn_grid_search_results.json'
+    # Load paramters
+    path_params = f'./ml_models/{organism}/tcn_grid_search_results.json'
     best_params = load_best_params(organism, path_params)
     if best_params is not None:
         print(f"Best parameters: num_filters: {best_params[0]}, filter_size: {best_params[1]}, dropout_factor: {best_params[2]}, num_blocks: {best_params[3]}, parallel_layer: {best_params[4]}, learing_rate: {best_params[5]}")
 
     # Hyperparameters
     num_features = len(mlh.amino_acids)
-    num_classes = len(mlh.codons)  # number of codons (output classes)
+    num_classes = len(mlh.codons)
     NUM_EPOCHS = 200
 
-    num_filters = 128 #64
-    filter_size = 5#3  # NOTE: filter size must be unequal like: 3,5,9,...
-    dropout_factor = 0.08 #0.08 #0.005
-    num_blocks = 5#2
+    num_filters = 128
+    # NOTE: filter size must be unequal like: 3,5,9,...
+    filter_size = 5
+    dropout_factor = 0.008
+    num_blocks = 5
     parallel_layer = True
-    learing_rate = 0.001 # 0.001
+    learing_rate = 0.001
 
     if best_params is not None:
         num_filters = best_params[0]
@@ -500,12 +476,10 @@ if __name__ == "__main__":
                             dropout_factor, num_blocks, parallel_layer)
     print(tcnModel)
 
-    #criterion = nn.CrossEntropyLoss(ignore_index=64)
     criterion = nn.CrossEntropyLoss(ignore_index=pad_int)
     optimizer = optim.Adam(tcnModel.parameters(), lr=learing_rate)
 
     trainings_losses, trainings_accuracies, valid_accs, best_epoch_idx = train(tcnModel, train_loader, valid_loader, NUM_EPOCHS, optimizer, criterion, device=device)
-
 
     json_data = {'organism': organism, 'training_valid_accs': valid_accs, 'best_epoch_idx': best_epoch_idx}
 
@@ -518,33 +492,3 @@ if __name__ == "__main__":
     print('Vaild Accs in training saved in:', acc_path)
 
     mlh.save_model(tcnModel, f'tcn_valid_acc_{round(round(valid_accs[-1],2) * 100)}', organism, dir_path='./ml_models')
-    """        
-    organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
-    organisms = [organisms[0]]
-
-    pad_int = mlh.codons.index('___')
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    for org in organisms:
-        test_dataset = mlh.CodonDataset(organism=org, split="test", padding_pos=None, data_path='./data/', one_hot_aa=False)
-        test_loader = DataLoader(test_dataset, batch_size=1)
-        print(f"Datensatz geladen für {org}")
-
-        tcnn_Model = mlh.load_model("tcn", org, device=device, path_model_dir="./ml_models")
-
-        classifier = Tcn_Classifier(tcnn_Model)
-        preds = classifier.predict_codons(test_loader, codon_names=False)
-
-        labels = []
-        for seq, lab in test_dataset:
-            lab = [int(c.item()) for c in lab]
-            labels.append(lab)
-        
-        for i, (lab, pred) in enumerate(zip(labels, preds)):
-            if len(lab) != len(pred):
-                print(f"Mismatch at index {i}: labels length {len(lab)}, predictions length {len(pred)}")
-
-    
-        acc = classifier.calc_accuracy(labels, preds, pad='')
-        print(f"Organismus {org} with a Accuracy: {round(acc, 3)}")
-        """
