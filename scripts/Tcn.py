@@ -188,8 +188,7 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
             # time_elapsed to timestamp
             time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time_elapsed))
             print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}, time: {time_elapsed}')
-            # print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
-
+            
         epoch += 1
         if epoch >= epochs:
             still_training = False
@@ -364,12 +363,6 @@ def predict_codons(model, aa_sequence_list, device=torch.device("cuda"), as_codo
     as_codon_names: whether to return the codon names or the integers indicating the codons
     ------
     returns: list with the predicted codons
-    """
-
-    """ TODO currntly only with dataloader
-    if not isinstance(aa_sequence_list, list):
-        for idx, seq in enumerate(aa_sequence_list):
-            aa_sequence_list[idx] = seq[0]
     """
     # Prepare data (pad, convert to tensor)
     prepared_amino_seq = []
