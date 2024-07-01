@@ -6,7 +6,7 @@ from collections import Counter
 
 
 def split_n_pickle(organism: str) -> None:
-    df: pd.DataFrame = pd.read_pickle(f"./data/{organism}/cleanedData.pkl")
+    df: pd.DataFrame = pd.read_pickle(f"../data/{organism}/cleanedData.pkl")
     seed = 42
     train_df = df.sample(frac=0.8, random_state=seed)
     test_valid_df = df.drop(train_df.index)
@@ -15,15 +15,15 @@ def split_n_pickle(organism: str) -> None:
 
     print(f"{organism:<25} total: {df.shape[0]:6} | train: {train_df.shape[0]:6} | test: {test_df.shape[0]:6} | valid: {valid_df.shape[0]:6}")
 
-    train_df.to_pickle(f"./data/{organism}/cleanedData_train.pkl")
-    test_df.to_pickle(f"./data/{organism}/cleanedData_test.pkl")
-    valid_df.to_pickle(f"./data/{organism}/cleanedData_valid.pkl")
+    train_df.to_pickle(f"../data/{organism}/cleanedData_train.pkl")
+    test_df.to_pickle(f"../data/{organism}/cleanedData_test.pkl")
+    valid_df.to_pickle(f"../data/{organism}/cleanedData_valid.pkl")
 
 def shuffle_n_pickle(organism: str) -> None:
 
     data_type = ["valid", "test", "train"]
     for dt in data_type:
-        df: pd.DataFrame = pd.read_pickle(f"./data/{organism}/cleanedData_{dt}.pkl")
+        df: pd.DataFrame = pd.read_pickle(f"../data/{organism}/cleanedData_{dt}.pkl")
         org_columns = df.columns.copy()
         # Shuffle index 
         df['random_index'] = df['translation'].apply(lambda x: np.random.permutation(len(x)))
@@ -61,11 +61,11 @@ def shuffle_n_pickle(organism: str) -> None:
         df['translation'] = df['shuffled_translation']
 
         df = df[org_columns]
-        df.to_pickle(f"./data/{organism}/cleanedData_{dt}_shuffled.pkl")
-        print(f'Saved file: {f"./data/{organism}/cleanedData_{dt}_shuffled.pkl"}')
+        df.to_pickle(f"../data/{organism}/cleanedData_{dt}_shuffled.pkl")
+        print(f'Saved file: {f"../data/{organism}/cleanedData_{dt}_shuffled.pkl"}')
 
 
-organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
-for organism in organisms:
+#organisms = ["E.Coli", "Drosophila.Melanogaster", "Homo.Sapiens"]
+#for organism in organisms:
     # split_n_pickle(organism)
-    shuffle_n_pickle(organism)
+ #   shuffle_n_pickle(organism)
