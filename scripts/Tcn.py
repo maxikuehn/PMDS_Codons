@@ -11,6 +11,7 @@ import os
 import copy
 import random
 import sys
+import time
 
 import ml_helper as mlh
 import Classifier
@@ -111,6 +112,7 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
     
     #for epoch in range(epochs):
     while still_training:
+        start_time = time.time()
         accuracies = []
         losses = []
 
@@ -180,8 +182,13 @@ def train(model, training_data: DataLoader, valid_data: DataLoader, epochs: int,
             best_acc = epoch_valid_acc
             best_epoch = epoch + 1
 
+        end_time = time.time()
         if verbose:
-            print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
+            time_elapsed = round(end_time-start_time, 2)
+            # time_elapsed to timestamp
+            time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time_elapsed))
+            print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}, time: {time_elapsed}')
+            # print(f'Epoch [{epoch+1}/{epochs}], Loss: {round(epoch_loss, 3)}, accuracy: {round(epoch_acc, 3)}, valid acc: {round(epoch_valid_acc, 3)}')
 
         epoch += 1
         if epoch >= epochs:
