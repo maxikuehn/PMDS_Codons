@@ -56,6 +56,7 @@ class Classifier:
         true_codon_list (list): The list of true codons.
         pred_codon_list (list): The list of predicted codons.
         segment_size (int, optional): The size of each segment. Defaults to 10.
+        cut_data_at (float, optional): 
 
         Returns:
         segment_accuracies (list): The list of accuracies per segment.

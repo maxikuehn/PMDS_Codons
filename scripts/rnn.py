@@ -1,5 +1,7 @@
 from collections import defaultdict as ddict
+from math import e
 import time
+from typing import Union
 
 import numpy as np
 import torch
@@ -10,6 +12,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
 from Classifier import Classifier
+import ml_helper as mlh
 
 class RNN(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, output_size: int, batch_size=1) -> None:
@@ -163,15 +166,26 @@ class RNN_Classifier(Classifier):
         self.model = trained_model
         super().__init__(seed)
 
-    def predict_codons(self, data: DataLoader, device=torch.device("cpu"), replace=False):
+    def predict_codons(self, data: Union[DataLoader, list], device=torch.device("cpu"), replace=False):
 
-        predictions = []
-        labels = []
-        for input, label in data:
-            l = label.view(-1).int()
-            p = predict(self.model, input, device=device)
+        if isinstance(data, DataLoader):
+            predictions = []
+            labels = []
+            for input, label in data:
+                l = label.view(-1).int()
+                p = predict(self.model, input, device=device)
 
-            predictions.append(p)
-            labels.append(l.tolist())
+                predictions.append(p)
+                labels.append(l.tolist())
 
-        return predictions, labels
+            return predictions, labels
+
+        elif isinstance(data, list):
+            predictions = []
+            for input in data:
+                input = mlh.aa_to_int_tensor(input, device)
+                input = mlh.aa_int_to_onehot_tensor(input).unsqueeze(0)
+                p = predict(self.model, input, device=device)
+                predictions.append(p)
+
+            return predictions
