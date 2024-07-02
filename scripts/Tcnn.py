@@ -418,8 +418,7 @@ class Tcn_Classifier(Classifier.Classifier):
 
 if __name__ == "__main__":
     # If called from command line (suitable for running on a server with nohup)
-    # cd scripts
-    # nohup python3 scripts/Tcn.py &
+    # nohup python3 scripts/Tcnn.py &
     # tail -f nohup.out
     # jobs -l
 
@@ -495,7 +494,7 @@ if __name__ == "__main__":
     json_data = {'organism': organism, 'training_valid_accs': valid_accs, 'best_epoch_idx': best_epoch_idx}
 
     # Save training valid accuracies
-    acc_path = data_path + f'/{organism}/training_valid_accs.json'
+    acc_path = data_path + f'/{organism}/tcn_training_valid_accs.json'
 
     with open(acc_path, 'w') as file:
         json.dump(json_data, file)
