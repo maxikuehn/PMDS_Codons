@@ -42,3 +42,4 @@ def clean_and_pickle(organism):
     reportDataDf = pd.DataFrame(reportData,index=[1,2,3,4])
     raw.to_pickle(pkl_folder+'cleanedData.pkl')
     reportDataDf.to_pickle(pkl_folder+'reportData.pkl')
+    print(reportData)
