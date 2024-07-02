@@ -115,7 +115,7 @@
     - [Classifier Class](scripts/Classifier.py)
     - [Baseline](scripts/Baseline_classifiers.py)
     - [RNN](scripts/rnn.py)
-    - [TCN](scripts/Tcn.py)
+    - [TCN](scripts/Tcnn.py)
     - [Encoder](scripts/encoder.py) & [Modified Pytorch Encoder](scripts/custom_transformer_encoder.py) (can output Attention weights)
     - [Index Classifier](scripts/index_classifier.py)
 - [Chemical Property](scripts/chemicalProperty.py): Chemical property analysis of codons
